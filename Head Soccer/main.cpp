@@ -70,8 +70,8 @@ struct Player
 		else gravity.activate(character,velocity);
 
         if(down && currentBottomPos < groundTop) velocity.y = 5.0f;
-        if(right && currentRightPos < screenWidth) velocity.x = 5.0f;
-        if(left && currentLeftPos > 0) velocity.x = -5.0f;
+        if(right && currentRightPos < screenWidth) velocity.x = 2.5f;
+        if(left && currentLeftPos > 0) velocity.x = -2.5f;
         
         //Screen Boundries
         if(character.getGlobalBounds().left <= 0) //Left Boundries
