@@ -11,7 +11,7 @@
 struct Gravity
 {	
 	bool inAir = 0;
-	float dv=1.5f, maxVY =10.0f, lostE = 0.25f,groundFr = 0.5f;
+	float dv=1.5f, maxVY =100.0f, lostE = 0.35f,groundFr = 0.25f;
 	
     void activate(sf::Sprite& body,sf::Vector2f& bodyV)
 	{
@@ -89,12 +89,13 @@ struct Player
         character.move(velocity);
     }
 
-    bool stopCollision(sf::Sprite& body)
+    bool stopCollision(sf::Sprite& body,sf::Vector2f& bodyV)
     {
         //Collisions
         if(character.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision with body
         {
-            velocity = -velocity; //Stop Player
+            bodyV = sf::Vector2f(velocity.x * 2, (velocity.y + 5) * 3);
+            velocity -= velocity;
             return true;
         }
         return false;
@@ -153,7 +154,7 @@ struct Ball
     sf::Texture ballT; //Texture to hold image
     sf::Sprite ball; //sprite to load image
     const float radius=25;
-    
+
     // Physics
     Gravity gravity;
     sf::Vector2f velocity;
@@ -164,11 +165,24 @@ struct Ball
         ball.setTexture(ballT);
         ball.setOrigin(sf::Vector2f(25, 25));
         ball.setPosition(sf::Vector2f(500, 100));
-        
+
     }
 
     void move()
     {
+        const float lostE = 0.25f;
+        //Screen Boundries
+        if(ball.getGlobalBounds().left <= 0) //Left Boundries
+		{
+			ball.setPosition(ball.getGlobalBounds().width / 2,ball.getPosition().y);
+			velocity.x = -velocity.x + velocity.x * lostE;
+		}
+		if(ball.getGlobalBounds().left + ball.getGlobalBounds().width >= screenWidth) //Right Boundries
+		{
+			ball.setPosition(screenWidth - ball.getGlobalBounds().width / 2,ball.getPosition().y);
+			velocity.x = -velocity.x + velocity.x * lostE;
+		}
+
         gravity.activate(ball, velocity);
 
         ball.move(velocity);
@@ -184,19 +198,6 @@ struct Button
     sf::Text title;
 
     bool inside=0;
-
-    void lock()
-    {
-        frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2 + 30,0, static_cast<int>(size.x) - 28, static_cast<int>(size.y)));
-    }
-    void notClicked()
-    {
-        frame.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
-    }
-    void clicked()
-    {
-         frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) + 12,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
-    }
 
     void create(sf::Vector2f pos,std::string x)
     {
@@ -224,6 +225,20 @@ struct Button
         window.draw(frame);
         window.draw(title);
     }
+
+    void lock()
+    {
+        frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2 + 30,0, static_cast<int>(size.x) - 28, static_cast<int>(size.y)));
+    }
+    void notClicked()
+    {
+        frame.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
+    }
+    void clicked()
+    {
+         frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) + 12,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
+    }
+
 };
 
 struct MainMenu
@@ -367,12 +382,12 @@ struct Match
         g1.loadFromFile("Data/Images/Goal1.png");
         goal1.setTexture(g1);
         goal1.setOrigin(sf::Vector2f(50, 90));
-        goal1.setPosition(sf::Vector2f(50, 500));
+        goal1.setPosition(sf::Vector2f(20, 500));
         
         g2.loadFromFile("Data/Images/Goal2.png");
         goal2.setTexture(g2);
         goal2.setOrigin(sf::Vector2f(50, 90));
-        goal2.setPosition(sf::Vector2f(950, 500));
+        goal2.setPosition(sf::Vector2f(980, 500));
 
         //Sounds
         kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
@@ -390,10 +405,10 @@ struct Match
         ball.move();
 
         //Collisions
-        if(player1.stopCollision(ball.ball) || player2.stopCollision(ball.ball))
+        if(player1.stopCollision(ball.ball,ball.velocity) || player2.stopCollision(ball.ball,ball.velocity))
             kickBallSound.play();
 
-        player1.stopCollision(player2.character);
+        player1.stopCollision(player2.character,player2.velocity);
     }
     
     //Rendering
