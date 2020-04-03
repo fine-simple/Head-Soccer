@@ -77,12 +77,11 @@ struct Player
         if(character.getGlobalBounds().left <= 0) //Left Boundries
 		{
 			character.setPosition(character.getGlobalBounds().width / 2,character.getPosition().y);
-			velocity.x = -velocity.x + velocity.x * lostE;
 		}
+        
 		if(character.getGlobalBounds().left + character.getGlobalBounds().width >= screenWidth) //Right Boundries
 		{
 			character.setPosition(screenWidth - character.getGlobalBounds().width / 2,character.getPosition().y);
-			velocity.x = -velocity.x + velocity.x * lostE;
 		}
 
         //Movement Action
