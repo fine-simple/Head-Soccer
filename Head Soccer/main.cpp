@@ -350,6 +350,63 @@ struct MainMenu
     }
 };
 
+//Mariam//
+//credits//
+struct credits
+{
+
+    //credits photo
+    sf::Texture creditstexture;
+    sf::Sprite credits;
+
+
+
+    //functions
+    //creating credits
+    void create()
+    {
+        creditstexture.loadFromFile("Data/Images/credits.jpg");
+        credits.setTexture(creditstexture);
+
+    }
+
+    //Rendering
+    void render(sf::RenderWindow& window)
+    {
+        window.draw(credits);
+    }
+
+};
+
+
+//Mariam//
+//instructions//
+struct instructions
+{
+    //instructions photo
+    sf::Texture instructionstexture;
+    sf::Sprite instructions;
+
+
+    //functions
+    //creating credits
+    void create()
+    {
+        instructionstexture.loadFromFile("Data/Images/instructions.jpg");
+        instructions.setTexture(instructionstexture);
+
+    }
+
+    //Rendering
+    void render(sf::RenderWindow& window)
+    {
+        window.draw(instructions);
+
+    }
+
+};
+
+
 struct Match
 {
     ////VARIABLES
@@ -464,6 +521,15 @@ int main()
     MainMenu menu;
     menu.create();
 
+
+    //Credits//mariam//
+    credits credit;
+    credit.create();
+
+    //Instructions//mariam//
+    instructions instruction;
+    instruction.create();
+
     //Single Player Session
     Match Game;
     Game.create();
@@ -545,8 +611,10 @@ int main()
         case 'm': //Multiplayer
             break;
         case 'i': //Instructions
+            instruction.render(window);
             break;
         case 'c': //Credits
+            credit.render(window);
             break;
         }
         
