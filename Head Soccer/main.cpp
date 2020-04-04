@@ -240,170 +240,185 @@ struct Button
 
 };
 
-struct MainMenu
-{   
-    /////////////////VARIABLES
-    
-    //Music
-    sf::Music menuMusic;
-
-    //Sounds
-    sf::SoundBuffer btnHoverbufr, btnClickbufr;
-    sf::Sound btnHover, btnClick;
-
-    //Buttons
-    static const int noOfBtns=4;
-    Button btn[noOfBtns];
-    std::string btnTitle[noOfBtns] ={"Single Player", "Multiplayer", "Instructions", "Credits"};
-    char btnSession[noOfBtns] = {'s', 'm', 'i', 'c'};
-    //Cursor
-    sf::Texture cursorTexture;
-    sf::Sprite cursor;
-
-    
-    /////////////////FUNCTIONS
-
-    //Creating Objects
-    void create()
-    {        
-        //Create Cursor
-        cursorTexture.loadFromFile("Data/Images/cursor.png");
-        cursor.setTexture(cursorTexture);
-        cursor.setOrigin(cursorTexture.getSize().x / 7.0f, 4.0f);
-        cursor.setScale(0.08f,0.08f);
-
-        //Create Buttons : Divided spaces in screen into 8 Xs and 7 Ys to put buttons in order
-        for (char i = 0; i < 4; i++)
-        {
-            btn[i].create(sf::Vector2f(screenWidth /8 * 4, screenHeight / 6.5f * (i+3) ), btnTitle[i]);
-        }
-
-        //Load and Play Music
-        menuMusic.openFromFile("Data/Sounds/MainMenu.wav");
-        menuMusic.setLoop(true);
-        menuMusic.play();
-
-        //Load Sounds
-        btnHoverbufr.loadFromFile("Data/Sounds/btnHover.wav");
-        btnHover.setBuffer(btnHoverbufr);
-        btnClickbufr.loadFromFile("Data/Sounds/btnClick.wav");
-        btnClick.setBuffer(btnClickbufr);
-    }
-
-    //Logic
-
-    //When mouse hovers over buttons
-    void Logic(sf::RenderWindow& window, char& session,sf::Vector2f& mousePos)
+struct Menus
+{
+    struct Main
     {   
-        //Buttons Hovered or Clicked Actions
+        /////////////////VARIABLES
+        
+        //Music
+        sf::Music menuMusic;
 
-        for (int i = 0; i < noOfBtns; i++)
-        {
-            if(btn[i].frame.getGlobalBounds().contains(mousePos))
+        //Sounds
+        sf::SoundBuffer btnHoverbufr, btnClickbufr;
+        sf::Sound btnHover, btnClick;
+
+        //Buttons
+        static const int noOfBtns=4;
+        Button btn[noOfBtns];
+        std::string btnTitle[noOfBtns] ={"Single Player", "Multiplayer", "Instructions", "Credits"};
+        char btnSession[noOfBtns] = {'s', 'm', 'i', 'c'};
+        //Cursor
+        sf::Texture cursorTexture;
+        sf::Sprite cursor;
+
+        
+        /////////////////FUNCTIONS
+
+        //Creating Objects
+        void create()
+        {        
+            //Create Cursor
+            cursorTexture.loadFromFile("Data/Images/cursor.png");
+            cursor.setTexture(cursorTexture);
+            cursor.setOrigin(cursorTexture.getSize().x / 7.0f, 4.0f);
+            cursor.setScale(0.08f,0.08f);
+
+            //Create Buttons : Divided spaces in screen into 8 Xs and 7 Ys to put buttons in order
+            for (char i = 0; i < 4; i++)
             {
-                if (!btn[i].inside)
+                btn[i].create(sf::Vector2f(screenWidth /8 * 4, screenHeight / 6.5f * (i+3) ), btnTitle[i]);
+            }
+
+            //Load and Play Music
+            menuMusic.openFromFile("Data/Sounds/MainMenu.wav");
+            menuMusic.setLoop(true);
+            menuMusic.play();
+
+            //Load Sounds
+            btnHoverbufr.loadFromFile("Data/Sounds/btnHover.wav");
+            btnHover.setBuffer(btnHoverbufr);
+            btnClickbufr.loadFromFile("Data/Sounds/btnClick.wav");
+            btnClick.setBuffer(btnClickbufr);
+        }
+
+        //Logic
+
+        //When mouse hovers over buttons
+        void Logic(sf::RenderWindow& window, char& session,sf::Vector2f& mousePos)
+        {   
+            //Buttons Hovered or Clicked Actions
+
+            for (int i = 0; i < noOfBtns; i++)
+            {
+                if(btn[i].frame.getGlobalBounds().contains(mousePos))
                 {
-                    btn[i].clicked();
-                    btnHover.play();
-                    btn[i].inside = 1;
+                    if (!btn[i].inside)
+                    {
+                        btn[i].clicked();
+                        btnHover.play();
+                        btn[i].inside = 1;
+                    }
+                    
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                    {
+                        btnClick.play();
+                        session = btnSession[i];
+                        menuMusic.stop();
+                    }
+                    
                 }
-                
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                else
                 {
-                    btnClick.play();
-                    session = btnSession[i];
-                    menuMusic.stop();
+                    if (btn[i].inside)
+                        btn[i].notClicked();
+                    btn[i].inside = 0;
+                    
                 }
                 
             }
-            else
-            {
-                if (btn[i].inside)
-                    btn[i].notClicked();
-                btn[i].inside = 0;
-                
-            }
-            
         }
-    }
 
-    //Moving Cursor with mouse position
-    void moveCursor(sf::Vector2f& mousePos)
-    {
-        cursor.setPosition(mousePos);
-    }
-
-    //Render Cursor
-    void renderCursor(sf::RenderWindow& window)
-    {
-        window.draw(cursor);
-    }
-
-    //Rendering
-    void render(sf::RenderWindow& window)
-    {
-        for (int i = 0; i < noOfBtns; i++)
+        //Moving Cursor with mouse position
+        void moveCursor(sf::Vector2f& mousePos)
         {
-            btn[i].render(window);
+            cursor.setPosition(mousePos);
         }
-    }
+
+        //Render Cursor
+        void renderCursor(sf::RenderWindow& window)
+        {
+            window.draw(cursor);
+        }
+
+        //Rendering
+        void render(sf::RenderWindow& window)
+        {
+            for (int i = 0; i < noOfBtns; i++)
+            {
+                btn[i].render(window);
+            }
+        }
+    };
+
+    //Mariam//
+    //credits//
+    struct Credits
+    {
+
+        //credits photo
+        sf::Texture creditstexture;
+        sf::Sprite credits;
+
+        //credits Background Music
+        sf::Music backgroundMusic;
+        bool isPlayed=0;
+
+        //functions
+        //creating credits
+        void create()
+        {
+            creditstexture.loadFromFile("Data/Images/credits.jpg");
+            credits.setTexture(creditstexture);
+            backgroundMusic.openFromFile("Data/Sounds/Credits.wav");
+        }
+        
+        void Logic()
+        {
+            if(!isPlayed)
+            {
+                backgroundMusic.play();
+                isPlayed=1;
+            }
+        }
+
+        //Rendering
+        void render(sf::RenderWindow& window)
+        {
+            window.draw(credits);
+        }
+
+    };
+
+
+    //Mariam//
+    //instructions//
+    struct Instructions
+    {
+        //instructions photo
+        sf::Texture instructionstexture;
+        sf::Sprite instructions;
+
+
+        //functions
+        //creating credits
+        void create()
+        {
+            instructionstexture.loadFromFile("Data/Images/instructions.jpg");
+            instructions.setTexture(instructionstexture);
+
+        }
+
+        //Rendering
+        void render(sf::RenderWindow& window)
+        {
+            window.draw(instructions);
+
+        }
+
+    };
 };
 
-//Mariam//
-//credits//
-struct credits
-{
-
-    //credits photo
-    sf::Texture creditstexture;
-    sf::Sprite credits;
-
-
-
-    //functions
-    //creating credits
-    void create()
-    {
-        creditstexture.loadFromFile("Data/Images/credits.jpg");
-        credits.setTexture(creditstexture);
-
-    }
-
-    //Rendering
-    void render(sf::RenderWindow& window)
-    {
-        window.draw(credits);
-    }
-
-};
-
-
-//Mariam//
-//instructions//
-struct instructions
-{
-    //instructions photo
-    sf::Texture instructionstexture;
-    sf::Sprite instructions;
-
-
-    //functions
-    //creating credits
-    void create()
-    {
-        instructionstexture.loadFromFile("Data/Images/instructions.jpg");
-        instructions.setTexture(instructionstexture);
-
-    }
-
-    //Rendering
-    void render(sf::RenderWindow& window)
-    {
-        window.draw(instructions);
-
-    }
-
-};
 
 
 struct Match
@@ -517,17 +532,17 @@ int main()
     background.setTexture(backgroundTexture);
     
     //Main Menu
-    MainMenu menu;
-    menu.create();
+    Menus::Main main;
+    main.create();
 
 
     //Credits//mariam//
-    credits credit;
-    credit.create();
+    Menus::Credits credits;
+    credits.create();
 
     //Instructions//mariam//
-    instructions instruction;
-    instruction.create();
+    Menus::Instructions instructions;
+    instructions.create();
 
     //Single Player Session
     Match Game;
@@ -586,14 +601,17 @@ int main()
         switch (session)
         {
         case 'd':
-            menu.Logic(window, session, mousePos);
+            main.Logic(window, session, mousePos);
             break;
         case 's':
             Game.SingleLogic();
             break;
+        case 'c':
+            credits.Logic();
+            break;
         }
 
-        menu.moveCursor(mousePos); //Move Cursor with the mouse
+        main.moveCursor(mousePos); //Move Cursor with the mouse
 
         //Rendering
         window.clear();
@@ -602,7 +620,7 @@ int main()
         switch (session)
         {
         case 'd': //Default which is main menu
-            menu.render(window);
+            main.render(window);
             break;
         case 's': //Single Player
             Game.render(window);
@@ -610,14 +628,14 @@ int main()
         case 'm': //Multiplayer
             break;
         case 'i': //Instructions
-            instruction.render(window);
+            instructions.render(window);
             break;
         case 'c': //Credits
-            credit.render(window);
+            credits.render(window);
             break;
         }
         
-        menu.renderCursor(window);
+        main.renderCursor(window); //Rendering Game Cursor;
         window.display();
     }
 
