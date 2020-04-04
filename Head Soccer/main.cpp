@@ -378,6 +378,7 @@ struct Menus
             if(!isPlayed)
             {
                 backgroundMusic.play();
+                backgroundMusic.setLoop(1);
                 isPlayed=1;
             }
         }
