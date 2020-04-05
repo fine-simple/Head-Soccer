@@ -10,10 +10,15 @@
 
 struct Global
 {
+    //Clicked inside the Game
+    bool LeftClick=0;
+    bool GamePaused=0;
+
     //Sounds
     sf::SoundBuffer btnHoverbufr, btnClickbufr;
     sf::Sound btnHover, btnClick;
-
+    bool soundEnabled =1;
+    
     //Cursor
     sf::Texture cursorTexture;
     sf::Sprite cursor;
@@ -328,8 +333,19 @@ struct Button
             sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
-        void create()
+        void create(std::string Type)
         {
+            Tex.loadFromFile("Data/Images/" + Type + ".png");
+            
+            sprite.setTexture(Tex);
+            
+            if(Type == "Cancel")
+                sprite.setScale(0.15, 0.15);
+            else
+                sprite.setScale(0.4, 0.4);
+
+            sprite.setOrigin(Tex.getSize().x / 6, Tex.getSize().y / 6);
+
             size = sf::Vector2f(static_cast<float>(Tex.getSize().x), static_cast<float>(Tex.getSize().y));
             size.x /= 3;
             notClicked();
@@ -354,6 +370,9 @@ struct Match
     //Sounds
     sf::SoundBuffer kickBallSoundbuff;
     sf::Sound kickBallSound;
+
+    //Buttons
+    Button::Round pauseBtn;
 
     ////FUNCTIONS
 
@@ -381,6 +400,9 @@ struct Match
         kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
         kickBallSound.setBuffer(kickBallSoundbuff);
 
+        //Pause Button
+        pauseBtn.create("PauseButton");
+        pauseBtn.sprite.setPosition(screenWidth - 100,10);
     } 
     
     //Logic
@@ -396,9 +418,33 @@ struct Match
         player1.move();
         player2.move();
         ball.move();
-
     }
     
+    void PauseLogic(sf::Vector2f& mousePos, char& session)
+    {
+        if(pauseBtn.sprite.getGlobalBounds().contains(mousePos))
+        {
+            if (!pauseBtn.inside)
+            {
+                pauseBtn.clicked();
+                global.btnHover.play();
+                pauseBtn.inside = 1;
+            }
+            
+            if (global.LeftClick)
+            {
+                global.btnClick.play();
+                global.GamePaused=1;
+            }
+        }
+        else
+        {
+            if (pauseBtn.inside)
+                pauseBtn.notClicked();
+            pauseBtn.inside = 0;
+        }
+    }
+
     void restart()
     {
         player1.sprite.setPosition(120,550);
@@ -415,6 +461,7 @@ struct Match
         window.draw(player2.sprite);
         window.draw(goal1);
         window.draw(goal2);
+        window.draw(pauseBtn.sprite);
     }
 }Game;
 
@@ -431,7 +478,7 @@ struct Menu
         static const int noOfBtns=4;
         Button::Rectangular btn[noOfBtns];
         std::string btnTitle[noOfBtns] ={"SinglePlayer", "MultiPlayer", "Instructions", "Credits"};
-        char btnSession[noOfBtns] = {'s', 'p', 'i', 'c'};
+        char btnSession[noOfBtns] = {'s', 'm', 'i', 'c'};
 
         /////////////////FUNCTIONS
 
@@ -468,7 +515,7 @@ struct Menu
                         btn[i].inside = 1;
                     }
                     
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                    if (global.LeftClick)
                     {
                         global.btnClick.play();
                         session = btnSession[i];
@@ -510,14 +557,24 @@ struct Menu
         sf::Music BGMusic;
         bool isPlayed=0;
 
+        //Return Button
+        Button::Round cancelBtn;
+
         //functions
         //creating credits
         void create()
         {
+            //Credits Image
             creditstexture.loadFromFile("Data/Images/credits.jpg");
             credits.setTexture(creditstexture);
+            
+            //Background Music
             BGMusic.openFromFile("Data/Sounds/Credits.wav");
             BGMusic.setLoop(1);
+            
+            //Cancel Button
+            cancelBtn.Tex.loadFromFile("Data/Images/Cancel.png");
+            cancelBtn.sprite.setTexture(cancelBtn.Tex);
         }
         
         void Logic()
@@ -546,19 +603,52 @@ struct Menu
         sf::Texture instructionstexture;
         sf::Sprite instructions;
 
+        //Cancel Button
+        Button::Round returnBtn;
+
         //functions
         //creating credits
         void create()
         {
             instructionstexture.loadFromFile("Data/Images/instructions.jpg");
             instructions.setTexture(instructionstexture);
+            returnBtn.create("Cancel");
+            returnBtn.sprite.setPosition(screenWidth / 9 * 7, 10);
+            returnBtn.sprite.setScale(0.25f,0.25f);
+        }
+        
+        //Button Logic
+        void Logic(sf::Vector2f& mousePos, char& session)
+        {
+            if(returnBtn.sprite.getGlobalBounds().contains(mousePos))
+            {
+                if (!returnBtn.inside)
+                {
+                    returnBtn.clicked();
+                    global.btnHover.play();
+                    returnBtn.inside = 1;
+                }
+                
+                if (global.LeftClick)
+                {
+                    global.btnClick.play();
+                    
+                }
+            }
+            else
+            {
+                if (returnBtn.inside)
+                    returnBtn.notClicked();
+                returnBtn.inside = 0;
+            }
         }
 
-        //Rendering
-        void render(sf::RenderWindow& window)
-        {
-            window.draw(instructions);
-        }
+            //Rendering
+            void render(sf::RenderWindow& window)
+            {
+                window.draw(instructions);
+                window.draw(returnBtn.sprite);
+            }
 
     };
 
@@ -566,56 +656,76 @@ struct Menu
     struct Pause
     {
         // VARIABLES
-        static const int n = 5;
-        bool isEnabled=0;
+        static const int n = 6;
         Button::Round btn[n];
-        char btnsession[n] = { 'r','s','m','i','h' };
+        
+        char btnsession[n] = { 'r','s','m','u','i','h' };
         /*
             r(return) Cancel
             s(single) Restart
             m(Mute) Mute Sounds
+            u(Unmute) Unmute Sounds
             i(instructions)
             h(Home) Main Menu
         */
-       
+        
+        //Background for Buttons
         sf::Texture bgT;
         sf::Sprite bg;
+        
+        //Semi Transparent Background
+        sf::RectangleShape Blur;
+        
+        //Title
         sf::Text paused;
+        sf::Text title;
+        sf::String titleString[n] = {"Return","Restart","Mute Sounds", "Unmute Sounds","Instructions","Home" };
 
         // FUNCTIONS
         void create()
         {
-            // 1-resume 2-restart 3-mute 4-instructions 5-main menu
-            sf::String s[5] = { "Cancel.png","restart.png","mute.png","inst.png","Menu.png" };
-            for (int i = 0; i < n; i++)
-            {
-                btn[i].Tex.loadFromFile("Data/Images/" + s[i]);
-                btn[i].sprite.setTexture(btn[i].Tex);
-                btn[i].sprite.setScale(0.4, 0.4);
-                btn[i].sprite.setOrigin(btn[i].Tex.getSize().x / 6, btn[i].Tex.getSize().y / 6);
-                btn[i].create();
-            }
-            // Buttons
-
-            btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70);
-            btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70);
-            btn[3].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70);
-            btn[4].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70);
-
-            // Background and text
+            // Background
             bgT.loadFromFile("Data/Images/pause menu.png");
             bg.setTexture(bgT);
             bg.setOrigin(bgT.getSize().x / 2, bgT.getSize().y / 2);
             bg.setScale(1, 1.05);
             bg.setPosition(screenWidth / 2, screenHeight / 2 + 50);
-            btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4 - 20, bgT.getSize().y - bgT.getSize().y / 4 + 20);
-            btn[0].sprite.setScale(0.15, 0.15);
+            
+            //Semi Transparent Background
+            Blur.setSize(sf::Vector2f(screenWidth,screenHeight));
+            Blur.setFillColor(sf::Color(220,220,220,80));
 
+
+            // Buttons
+            
+            // 1-resume 2-restart 3-mute 4-unmute 5-instructions 6-main menu
+            sf::String s[] = { "Cancel","Restart","Mute", "Unmute","Inst","Menu" };
+            for (int i = 0; i < n; i++)
+            {
+                btn[i].create(s[i]);
+            }
+
+            btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4 - 20, bgT.getSize().y - bgT.getSize().y / 4 + 20);
+            btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70);
+            btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70);
+            btn[3].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70);
+            btn[4].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70);
+            btn[5].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70);
+
+            //Text
+
+            //Pause Menu Title
             paused.setFont(global.BtnFont);
             paused.setCharacterSize(100);
-            paused.setString("PAUSED!");
+            paused.setString("PAUSED");
             paused.setOrigin(paused.getLocalBounds().width / 2, paused.getGlobalBounds().height / 2);
             paused.setPosition(screenWidth / 2, screenHeight / 2 - 180);
+
+            //Current Button Title
+            title.setFont(global.BtnFont);
+            title.setOrigin(title.getGlobalBounds().width / 2, title.getGlobalBounds().height / 2);
+            title.setPosition(screenWidth / 2.2f,screenHeight / 1.85f);
+            title.setCharacterSize(25);
         }
 
         void Logic(sf::RenderWindow& window, char& session, sf::Vector2f& mousePos)
@@ -629,8 +739,10 @@ struct Menu
                         btn[i].clicked();
                         global.btnHover.play();
                         btn[i].inside = 1;
+                        title.setString(titleString[i]);
                     }
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                    
+                    if (global.LeftClick)
                     {
                         global.btnClick.play();
 
@@ -639,17 +751,22 @@ struct Menu
                         case 's':
                             Game.restart();
                         case 'r':
-                            isEnabled=0;
+                            global.GamePaused=0;
                             session = 's';
                             break;
                         case 'm':
-
+                            global.soundEnabled=0;
+                            break;
+                        case 'u':
+                            global.soundEnabled=1;
                             break;
                         case 'i':
-
+                            global.GamePaused=0;
+                            session='i';
                             break;
                         case 'h':
-
+                            global.GamePaused=0;
+                            session='h';
                             break;
                         }
                     }
@@ -657,7 +774,10 @@ struct Menu
                 else
                 {
                     if (btn[i].inside)
+                    {
                         btn[i].notClicked();
+                        title.setString("");
+                    }
                     btn[i].inside = 0;
                 }
             }
@@ -665,16 +785,20 @@ struct Menu
 
         void render(sf::RenderWindow& window)
         {
+            window.draw(Blur);
             window.draw(bg);
             window.draw(paused);
+
             for (int i = 0; i < n; i++)
             {
                 window.draw(btn[i].sprite);
             }
+
+            window.draw(title);
         }
     };
 };
-
+ 
 void loadScreen(sf::RenderWindow& window)
 {
     sf::Text title;
@@ -693,7 +817,7 @@ void loadScreen(sf::RenderWindow& window)
 int main()
 {
     //variables
-    char session='h'; // to know which screen to render and handle
+    char screen='h'; // to know which screen to render and handle
     /*
         h(Home) Main Menu
         s(Single) SinglePlayer
@@ -744,12 +868,35 @@ int main()
         {
             switch (e.type)
             {
+                //Window Events
                 case sf::Event::Closed:
                     window.close();
                     break;
+                case sf::Event::LostFocus:
+                    if(screen == 's')
+                        global.GamePaused=1;
+                    break;
+                //Mouse Events
                 case sf::Event::MouseMoved:
                     mousePos = sf::Vector2f(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
                     break;
+                case sf::Event::MouseButtonPressed:
+                    switch (e.key.code)
+                    {
+                    case sf::Mouse::Left:
+                        global.LeftClick=1;
+                        break;
+                    }
+                    break;
+                case sf::Event::MouseButtonReleased:
+                    switch (e.key.code)
+                    {
+                    case sf::Mouse::Left:
+                        global.LeftClick=0;
+                        break;
+                    }
+                    break;
+                //Keyboard Events
                 case sf::Event::KeyPressed:
                     switch (e.key.code)
                     {
@@ -787,26 +934,26 @@ int main()
         //Logic
         global.Logic(mousePos);
 
-        switch (session)
-        {
-        case 'h':
-            main.Logic(window, session, mousePos);
-            break;
-        case 's':
-            Game.SingleLogic();
-            break;
-        case 'c':
-            credits.Logic();
-            break;
-        case 'p':
-            pause.Logic(window, session, mousePos);
-        }
-    
+        if(!global.GamePaused)
+            switch (screen)
+            {
+            case 'h':
+                main.Logic(window, screen, mousePos);
+                break;
+            case 's':
+                Game.SingleLogic();
+                Game.PauseLogic(mousePos, screen);
+                break;
+            case 'c':
+                credits.Logic();
+                break;
+            }
+        else pause.Logic(window, screen, mousePos);
         //Rendering
         window.clear();
         global.renderBG(window);
         
-        switch (session)
+        switch (screen)
         {
         case 'h': //Default which is main menu
             main.render(window);
@@ -823,7 +970,8 @@ int main()
             credits.render(window);
             break;
         }
-        if(pause.isEnabled)
+
+        if(global.GamePaused) //Pause Menu to show above current screen
             pause.render(window);
 
         global.renderCursor(window);
