@@ -30,162 +30,169 @@ struct Gravity
 	}
 };
 
-struct Player
+struct Object
 {
-    //VARIABLES
-
-    bool up=0,down=0,right=0,left=0; //Movement Booleans
-    const float lostE = 0.25f;
-    //Character
-    sf::Texture texture;
-    sf::Sprite character;
-
-    sf::Vector2f velocity; //Character current Velocity
-    Gravity gravity; //chracter gravity
-    //FUNCTIONS
-
-    void create(std::string path,sf::Vector2f pos)
+    struct Player
     {
-        texture.loadFromFile(path);
-        character.setTexture(texture);
-        character.setPosition(pos);
-        character.setOrigin(character.getGlobalBounds().width / 2,character.getGlobalBounds().height / 2);
-        gravity.lostE = 0.9f;
-        gravity.dv = 0.15f;
-    }
+        //VARIABLES
 
-    void move()
-    {
-        float currentTopPos = character.getGlobalBounds().top;
-        float currentBottomPos = currentTopPos + character.getGlobalBounds().height;
-        float currentLeftPos = character.getGlobalBounds().left; //character.getPosition().y - character.getGlobalBounds().width / 2;
-        float currentRightPos = currentLeftPos + character.getGlobalBounds().width;
-
-        //Controls
-        if(up)
-        {
-			velocity.y = -6.0f;
-            up = 0;
-        }
-		else gravity.activate(character,velocity);
-
-        if(down && currentBottomPos < groundTop) velocity.y = 5.0f;
-        if(right && currentRightPos < screenWidth) velocity.x = 2.5f;
-        if(left && currentLeftPos > 0) velocity.x = -2.5f;
-        
-        //Screen Boundries
-        if(character.getGlobalBounds().left <= 0) //Left Boundries
-		{
-			character.setPosition(character.getGlobalBounds().width / 2,character.getPosition().y);
-		}
-        
-		if(character.getGlobalBounds().left + character.getGlobalBounds().width >= screenWidth) //Right Boundries
-		{
-			character.setPosition(screenWidth - character.getGlobalBounds().width / 2,character.getPosition().y);
-		}
-
-        //Movement Action
-        character.move(velocity);
-    }
-
-    bool stopCollision(sf::Sprite& body,sf::Vector2f& bodyV)
-    {
-        //Collisions
-        if(character.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision with body
-        {
-            bodyV = sf::Vector2f(velocity.x * 2, (velocity.y + 5) * 3);
-            velocity -= velocity;
-            return true;
-        }
-        return false;
-    }
-    
-    //pressed button
-    void upPressed()
-    {
-        if(character.getPosition().y + character.getGlobalBounds().height /2 >= groundTop)
-            up=1;
-    }
-
-    void downPressed()
-    {
-        down=1;
-    }
-
-    void rightPressed()
-    {
-        right=1;
-    }
-
-    void leftPressed()
-    {
-        left=1;
-    }
-
-    //Released button
-
-    void upRealesed()
-    {
-        up=0;
-    }
-
-    void downRealesed()
-    {
-        down=0;
-    }
-
-    void rightRealesed()
-    {
-        right=0;
-    }
-
-    void leftRealesed()
-    {
-        left=0;
-    }
-};
-
-struct Ball
-{
-    ////VARIABLES
-
-    // Ball Shape
-    sf::Texture ballT; //Texture to hold image
-    sf::Sprite ball; //sprite to load image
-    const float radius=25;
-
-    // Physics
-    Gravity gravity;
-    sf::Vector2f velocity;
-
-    void create()
-    {
-        ballT.loadFromFile("Data/Images/ball.png");
-        ball.setTexture(ballT);
-        ball.setOrigin(sf::Vector2f(25, 25));
-        ball.setPosition(sf::Vector2f(500, 100));
-
-    }
-
-    void move()
-    {
+        bool up=0,down=0,right=0,left=0; //Movement Booleans
         const float lostE = 0.25f;
-        //Screen Boundries
-        if(ball.getGlobalBounds().left <= 0) //Left Boundries
-		{
-			ball.setPosition(ball.getGlobalBounds().width / 2,ball.getPosition().y);
-			velocity.x = -velocity.x + velocity.x * lostE;
-		}
-		if(ball.getGlobalBounds().left + ball.getGlobalBounds().width >= screenWidth) //Right Boundries
-		{
-			ball.setPosition(screenWidth - ball.getGlobalBounds().width / 2,ball.getPosition().y);
-			velocity.x = -velocity.x + velocity.x * lostE;
-		}
+        //Character
+        sf::Texture texture;
+        sf::Sprite sprite;
+        sf::Vector2f velocity;
 
-        gravity.activate(ball, velocity);
+        Gravity gravity; //chracter gravity
+        //FUNCTIONS
 
-        ball.move(velocity);
-    }
+        void create(std::string path,sf::Vector2f pos)
+        {
+            texture.loadFromFile(path);
+            sprite.setTexture(texture);
+            sprite.setPosition(pos);
+            sprite.setOrigin(sprite.getGlobalBounds().width / 2,sprite.getGlobalBounds().height / 2);
+            gravity.lostE = 0.9f;
+            gravity.dv = 0.15f;
+        }
+
+        void move()
+        {
+            float currentTopPos = sprite.getGlobalBounds().top;
+            float currentBottomPos = currentTopPos + sprite.getGlobalBounds().height;
+            float currentLeftPos = sprite.getGlobalBounds().left;
+            float currentRightPos = currentLeftPos + sprite.getGlobalBounds().width;
+
+            //Controls
+            if(up)
+            {
+                velocity.y = -6.0f;
+                up = 0;
+            }
+            else gravity.activate(sprite, velocity);
+
+            if(down && currentBottomPos < groundTop) velocity.y = 5.0f;
+            if(right && currentRightPos < screenWidth) velocity.x = 2.5f;
+            if(left && currentLeftPos > 0) velocity.x = -2.5f;
+            
+            //Screen Boundries
+            if(sprite.getGlobalBounds().left <= 0) //Left Boundries
+            {
+                sprite.setPosition(sprite.getGlobalBounds().width / 2,sprite.getPosition().y);
+            }
+            
+            if(sprite.getGlobalBounds().left + sprite.getGlobalBounds().width >= screenWidth) //Right Boundries
+            {
+                sprite.setPosition(screenWidth - sprite.getGlobalBounds().width / 2,sprite.getPosition().y);
+            }
+
+            //Movement Action
+            sprite.move(velocity);
+        }
+
+        bool stopCollision(sf::Sprite& body,sf::Vector2f& bodyV)
+        {
+            //Collisions
+            if(sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision with body
+            {
+                bodyV = sf::Vector2f(velocity.x * 4, velocity.y * 3);
+                velocity = -velocity;
+                return true;
+            }
+            return false;
+        }
+        
+        //Pressed button
+        void upPressed()
+        {
+            if(sprite.getPosition().y + sprite.getGlobalBounds().height /2 >= groundTop) //Jump
+                up=1;
+        }
+
+        void downPressed()
+        {
+            down=1;
+        }
+
+        void rightPressed()
+        {
+            right=1;
+        }
+
+        void leftPressed()
+        {
+            left=1;
+        }
+
+        //Released button
+
+        void upRealesed()
+        {
+            up=0;
+        }
+
+        void downRealesed()
+        {
+            down=0;
+        }
+
+        void rightRealesed()
+        {
+            right=0;
+        }
+
+        void leftRealesed()
+        {
+            left=0;
+        }
+    };
+
+    struct Ball
+    {
+        ////VARIABLES
+
+        // Ball Propreties
+        sf::Texture texture;
+        sf::Sprite sprite;
+
+        const float radius=25;
+
+        // Physics
+        Gravity gravity;
+        sf::Vector2f velocity;
+
+        void create()
+        {
+            texture.loadFromFile("Data/Images/ball.png");
+            sprite.setTexture(texture);
+            sprite.setOrigin(sf::Vector2f(25, 25));
+            sprite.setPosition(sf::Vector2f(500, 100));
+            sprite.setScale(0.80f,0.80f);
+            gravity.dv = 0.5;
+            gravity.groundFr=0.0f;
+        }
+
+        void move()
+        {
+            const float lostE = 0.25f;
+            //Screen Boundries
+            if(sprite.getGlobalBounds().left <= 0) //Left Boundries
+            {
+                sprite.setPosition(sprite.getGlobalBounds().width / 2,sprite.getPosition().y);
+                velocity.x = -velocity.x + velocity.x * lostE;
+            }
+            if(sprite.getGlobalBounds().left + sprite.getGlobalBounds().width >= screenWidth) //Right Boundries
+            {
+                sprite.setPosition(screenWidth - sprite.getGlobalBounds().width / 2,sprite.getPosition().y);
+                velocity.x = -velocity.x + velocity.x * lostE;
+            }
+
+            gravity.activate(sprite, velocity);
+
+            sprite.move(velocity);
+            sprite.rotate(velocity.x);
+        }
+    };    
 };
 
 struct Button
@@ -419,8 +426,6 @@ struct Menus
     };
 };
 
-
-
 struct Match
 {
     ////VARIABLES
@@ -431,8 +436,8 @@ struct Match
     // Bodies declaration
     sf::Sprite goal1, goal2;
     sf::RectangleShape ground;
-    Player player1,player2;
-    Ball ball;
+    Object::Player player1,player2;
+    Object::Ball ball;
     
     //Sounds
     sf::SoundBuffer kickBallSoundbuff;
@@ -470,25 +475,25 @@ struct Match
 
     void SingleLogic()
     {
+        //Collisions
+        if(player1.stopCollision(ball.sprite,ball.velocity) || player2.stopCollision(ball.sprite,ball.velocity))
+            kickBallSound.play();
+
+        player1.stopCollision(player2.sprite,player2.velocity);
         //Movement Control
         player1.move();
         player2.move();
         ball.move();
 
-        //Collisions
-        if(player1.stopCollision(ball.ball,ball.velocity) || player2.stopCollision(ball.ball,ball.velocity))
-            kickBallSound.play();
-
-        player1.stopCollision(player2.character,player2.velocity);
     }
     
     //Rendering
     void render(sf::RenderWindow& window)
     {
         window.draw(ground);
-        window.draw(ball.ball);
-        window.draw(player1.character);
-        window.draw(player2.character);
+        window.draw(ball.sprite);
+        window.draw(player1.sprite);
+        window.draw(player2.sprite);
         window.draw(goal1);
         window.draw(goal2);
     }
