@@ -56,6 +56,8 @@ struct Global
     {
         //Moving Cursor with mouse position
         cursor.setPosition(mousePos);
+
+        LeftClick=0; //Realese Left Click Button
     }
     
     //Render Background
@@ -473,6 +475,7 @@ struct Menu
 
         //Music
         sf::Music BGMusic;
+        bool isPlaying=0;
 
         //Buttons
         static const int noOfBtns=4;
@@ -494,7 +497,6 @@ struct Menu
             //Load and Play Music
             BGMusic.openFromFile("Data/Sounds/MainMenu.wav");
             BGMusic.setLoop(true);
-            BGMusic.play();
         }
 
         //Logic
@@ -520,6 +522,7 @@ struct Menu
                         global.btnClick.play();
                         session = btnSession[i];
                         BGMusic.stop();
+                        isPlaying=0;
                     }
                     
                 }
@@ -531,6 +534,13 @@ struct Menu
                     
                 }
                 
+            }
+
+            //Play Music
+            if(!isPlaying)
+            {
+                BGMusic.play();
+                isPlaying=1;
             }
         }
 
@@ -555,10 +565,10 @@ struct Menu
 
         //credits Background Music
         sf::Music BGMusic;
-        bool isPlayed=0;
+        bool isPlaying=0;
 
         //Return Button
-        Button::Round cancelBtn;
+        Button::Round returnBtn;
 
         //functions
         //creating credits
@@ -573,16 +583,41 @@ struct Menu
             BGMusic.setLoop(1);
             
             //Cancel Button
-            cancelBtn.Tex.loadFromFile("Data/Images/Cancel.png");
-            cancelBtn.sprite.setTexture(cancelBtn.Tex);
+            returnBtn.create("Cancel");
+            returnBtn.sprite.setPosition(screenWidth / 9 * 7, 10);
+            returnBtn.sprite.setScale(0.25f,0.25f);
         }
         
-        void Logic()
+        void Logic(sf::Vector2f& mousePos, char& session)
         {
-            if(!isPlayed)
+            if(!isPlaying)
             {
                 BGMusic.play();
-                isPlayed=1;
+                isPlaying=1;
+            }
+
+            if(returnBtn.sprite.getGlobalBounds().contains(mousePos))
+            {
+                if (!returnBtn.inside)
+                {
+                    returnBtn.clicked();
+                    global.btnHover.play();
+                    returnBtn.inside = 1;
+                }
+                
+                if (global.LeftClick)
+                {
+                    global.btnClick.play();
+                    BGMusic.stop();
+                    isPlaying=0;
+                    session = 'h';
+                }
+            }
+            else
+            {
+                if (returnBtn.inside)
+                    returnBtn.notClicked();
+                returnBtn.inside = 0;
             }
         }
 
@@ -590,6 +625,7 @@ struct Menu
         void render(sf::RenderWindow& window)
         {
             window.draw(credits);
+            window.draw(returnBtn.sprite);
         }
 
     };
@@ -632,7 +668,7 @@ struct Menu
                 if (global.LeftClick)
                 {
                     global.btnClick.play();
-                    
+                    session = 'h';
                 }
             }
             else
@@ -769,6 +805,7 @@ struct Menu
                             session='h';
                             break;
                         }
+                        // sf::sleep(sf::milliseconds(150));
                     }
                 }
                 else
@@ -888,14 +925,6 @@ int main()
                         break;
                     }
                     break;
-                case sf::Event::MouseButtonReleased:
-                    switch (e.key.code)
-                    {
-                    case sf::Mouse::Left:
-                        global.LeftClick=0;
-                        break;
-                    }
-                    break;
                 //Keyboard Events
                 case sf::Event::KeyPressed:
                     switch (e.key.code)
@@ -932,7 +961,6 @@ int main()
         }
 
         //Logic
-        global.Logic(mousePos);
 
         if(!global.GamePaused)
             switch (screen)
@@ -945,10 +973,16 @@ int main()
                 Game.PauseLogic(mousePos, screen);
                 break;
             case 'c':
-                credits.Logic();
+                credits.Logic(mousePos, screen);
+                break;
+            case 'i':
+                instructions.Logic(mousePos, screen);
                 break;
             }
         else pause.Logic(window, screen, mousePos);
+        
+        global.Logic(mousePos);
+
         //Rendering
         window.clear();
         global.renderBG(window);
