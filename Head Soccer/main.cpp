@@ -12,7 +12,12 @@ struct Global
 {
     //Clicked inside the Game
     bool LeftClick=0;
+
+    //if Game is Paused
     bool GamePaused=0;
+
+    //if to return from Instructions to Game
+    bool continueGame=0;
 
     //Sounds
     sf::SoundBuffer btnHoverbufr, btnClickbufr;
@@ -404,7 +409,8 @@ struct Match
 
         //Pause Button
         pauseBtn.create("PauseButton");
-        pauseBtn.sprite.setPosition(screenWidth - 100,10);
+        pauseBtn.sprite.setPosition(screenWidth - 80,30);
+        pauseBtn.sprite.setScale(0.25,0.25);
     } 
     
     //Logic
@@ -504,8 +510,14 @@ struct Menu
         //When mouse hovers over buttons
         void Logic(sf::RenderWindow& window, char& session,sf::Vector2f& mousePos)
         {   
+            //Play Music
+            if(!isPlaying)
+            {
+                BGMusic.play();
+                isPlaying=1;
+            }
+            
             //Buttons Hovered or Clicked Actions
-
             for (int i = 0; i < noOfBtns; i++)
             {
                 if(btn[i].frame.getGlobalBounds().contains(mousePos))
@@ -534,13 +546,6 @@ struct Menu
                     
                 }
                 
-            }
-
-            //Play Music
-            if(!isPlaying)
-            {
-                BGMusic.play();
-                isPlaying=1;
             }
         }
 
@@ -668,7 +673,18 @@ struct Menu
                 if (global.LeftClick)
                 {
                     global.btnClick.play();
-                    session = 'h';
+
+                    if(global.continueGame)
+                    {
+                        global.GamePaused=1;
+                        session = 's';
+                        global.continueGame=0;
+                    }
+                    else
+                    {
+                        session='h';
+                    }
+                    
                 }
             }
             else
@@ -797,6 +813,7 @@ struct Menu
                             global.soundEnabled=1;
                             break;
                         case 'i':
+                            global.continueGame=1;
                             global.GamePaused=0;
                             session='i';
                             break;
