@@ -8,6 +8,7 @@
 #define screenHeight 650
 #define groundTop 590
 
+/// Global Struct, contains stuff that are used in more than one scope
 struct Global
 {
     //Clicked inside the Game
@@ -65,13 +66,13 @@ struct Global
         LeftClick=0; //Realese Left Click Button
     }
     
-    //Render Background
+    //Render(Draw) Background
     void renderBG(sf::RenderWindow& window)
     {
         window.draw(background);
     }
     
-    //Render Cursor
+    //Render(Draw) Cursor
     void renderCursor(sf::RenderWindow& window)
     {
         window.draw(cursor);
@@ -79,20 +80,21 @@ struct Global
 
 }global;
 
+/// Gravity Struct, responsible for applying gravity to different objects, giving it realistic feeling
 struct Gravity
 {	
 	bool inAir = 0;
-	float dv=1.5f, maxVY =100.0f, lostE = 0.35f,groundFr = 0.25f;
+	float dv=1.5f, maxVY =100.0f, lostE = 0.35f, groundFr = 0.25f;
 	
     void activate(sf::Sprite& body,sf::Vector2f& bodyV)
 	{
 		inAir = body.getPosition().y + body.getGlobalBounds().height / 2 < groundTop; //If object is above Air
 		
-		if(inAir)
+		if(inAir) //return it back to ground
 		{
 			if(bodyV.y < maxVY) bodyV.y += dv;
 		}
-		else
+		else      //bounce back with losing energy
 		{
 		 	bodyV.y = -bodyV.y + bodyV.y * lostE;
 			bodyV.x -= bodyV.x * groundFr;
@@ -101,14 +103,16 @@ struct Gravity
 	}
 };
 
+/// Object Struct, contains  Player, Ball, and any other moving objects (if exists)
 struct Object
 {
     struct Player
     {
         //VARIABLES
 
-        bool up=0,down=0,right=0,left=0; //Movement Booleans
+        bool up=0, down=0, right=0, left=0; //Movement Booleans
         const float lostE = 0.25f;
+
         //Character
         sf::Texture texture;
         sf::Sprite sprite;
@@ -266,9 +270,11 @@ struct Object
     };    
 };
 
+/// Button Struct, responsible for making and rendering all different buttons in the game
 struct Button
 {
     
+    /// Responsible for Rectangular Shaped Buttons (Added by Tawfik)
     struct Rectangular
     {
         sf::Texture frameTexture;
@@ -280,7 +286,7 @@ struct Button
 
         void create(sf::Vector2f pos,std::string x)
         {
-            //Button Style
+            // Button style and dimensions
             frameTexture.loadFromFile("Data/Images/RecButton.png");
             size = sf::Vector2f(static_cast<float>(frameTexture.getSize().x), static_cast<float>(frameTexture.getSize().y));
             size.x /= 3;
@@ -290,7 +296,7 @@ struct Button
             frame.setOrigin(sf::Vector2f(size.x / 2.0f, size.y / 2.0f));
             frame.setPosition(pos);
 
-            ////Text inside button
+            // Text inside button
             title.setFont(global.BtnFont);
             title.setCharacterSize(50);
             title.setString(x);
@@ -298,20 +304,24 @@ struct Button
             title.setPosition(frame.getPosition().x, frame.getPosition().y - 15);
         }
 
-        void render(sf::RenderWindow& window)
+        void render(sf::RenderWindow& window)   // draws the button and its text
         {
             window.draw(frame);
             window.draw(title);
         }
 
+        /// Next 3 functions change the texture based on its state
+
         void disabled()
         {
             frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2 + 30,0, static_cast<int>(size.x) - 28, static_cast<int>(size.y)));
         }
+
         void notClicked()
         {
             frame.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
         }
+
         void clicked()
         {
             frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) + 12,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
@@ -319,7 +329,7 @@ struct Button
 
     };
 
-    //Menna//
+    /// Responsible for Round Shaped Buttons (Added by Menna)
     struct Round
     {
         sf::Texture Tex;
@@ -331,10 +341,12 @@ struct Button
         {
             sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
+
         void notClicked()
         {
             sprite.setTextureRect(sf::IntRect(0, 0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
+
         void clicked()
         {
             sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
@@ -361,120 +373,124 @@ struct Button
     
 };
 
+/// Match Struct, contains the main game screen
 struct Match
 {
-    ////VARIABLES
+    //// VARIABLES ////
 
-    // Textures declaration
-    sf::Texture g1,g2;
+        // Textures declaration
+        sf::Texture g1,g2;
 
-    // Bodies declaration
-    sf::Sprite goal1, goal2;
-    sf::RectangleShape ground;
-    Object::Player player1,player2;
-    Object::Ball ball;
+        // Bodies declaration
+        sf::Sprite goal1, goal2;
+        sf::RectangleShape ground;
+        Object::Player player1,player2;
+        Object::Ball ball;
     
-    //Sounds
-    sf::SoundBuffer kickBallSoundbuff;
-    sf::Sound kickBallSound;
+        // Sounds
+        sf::SoundBuffer kickBallSoundbuff;
+        sf::Sound kickBallSound;
     
-    //Buttons
-    Button::Round pauseBtn;
+        // Buttons
+        Button::Round pauseBtn;
 
-    ////FUNCTIONS
+    //// FUNCTIONS ////
 
-    void create()
-    {
-        // Players
-        player1.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
-        player2.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
-        
-        //Ball
-        ball.create();
-        
-        //Goals
-        g1.loadFromFile("Data/Images/Goal1.png");
-        goal1.setTexture(g1);
-        goal1.setOrigin(sf::Vector2f(50, 90));
-        goal1.setPosition(sf::Vector2f(20, 500));
-        
-        g2.loadFromFile("Data/Images/Goal2.png");
-        goal2.setTexture(g2);
-        goal2.setOrigin(sf::Vector2f(50, 90));
-        goal2.setPosition(sf::Vector2f(980, 500));
-
-        //Sounds
-        kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
-        kickBallSound.setBuffer(kickBallSoundbuff);
-
-        //Pause Button
-        pauseBtn.create("PauseButton");
-        pauseBtn.sprite.setPosition(screenWidth - 80,30);
-        pauseBtn.sprite.setScale(0.25,0.25);
-    } 
-    
-    //Logic
-
-    void SingleLogic()
-    {
-        //Collisions
-        if(player1.stopCollision(ball.sprite,ball.velocity) || player2.stopCollision(ball.sprite,ball.velocity))
-            kickBallSound.play();
-
-        player1.stopCollision(player2.sprite,player2.velocity);
-        //Movement Control
-        player1.move();
-        player2.move();
-        ball.move();
-    }
-    
-    void PauseLogic(sf::Vector2f& mousePos, char& session)
-    {
-        if(pauseBtn.sprite.getGlobalBounds().contains(mousePos))
+        void create()
         {
-            if (!pauseBtn.inside)
+            // Players
+            player1.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
+            player2.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
+        
+            //Ball
+            ball.create();
+        
+            //Goals
+            g1.loadFromFile("Data/Images/Goal1.png");
+            goal1.setTexture(g1);
+            goal1.setOrigin(sf::Vector2f(50, 90));
+            goal1.setPosition(sf::Vector2f(20, 500));
+        
+            g2.loadFromFile("Data/Images/Goal2.png");
+            goal2.setTexture(g2);
+            goal2.setOrigin(sf::Vector2f(50, 90));
+            goal2.setPosition(sf::Vector2f(980, 500));
+
+            //Sounds
+            kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
+            kickBallSound.setBuffer(kickBallSoundbuff);
+
+            //Pause Button
+            pauseBtn.create("PauseButton");
+            pauseBtn.sprite.setPosition(screenWidth - 80,30);
+            pauseBtn.sprite.setScale(0.25,0.25);
+        } 
+    
+        // Logic
+
+        void SingleLogic()
+        {
+            // Collisions
+            if(player1.stopCollision(ball.sprite,ball.velocity) || player2.stopCollision(ball.sprite,ball.velocity))
+                kickBallSound.play();
+
+            player1.stopCollision(player2.sprite,player2.velocity);
+
+            // Movement Control
+            player1.move();
+            player2.move();
+            ball.move();
+        }
+    
+        void PauseLogic(sf::Vector2f& mousePos, char& session)
+        {
+            if(pauseBtn.sprite.getGlobalBounds().contains(mousePos))
             {
-                pauseBtn.clicked();
-                global.btnHover.play();
-                pauseBtn.inside = 1;
-            }
+                if (!pauseBtn.inside)
+                {
+                    pauseBtn.clicked();
+                    global.btnHover.play();
+                    pauseBtn.inside = 1;
+                }
             
-            if (global.LeftClick)
+                if (global.LeftClick)
+                {
+                    global.btnClick.play();
+                    global.GamePaused=1;
+                }
+            }
+            else
             {
-                global.btnClick.play();
-                global.GamePaused=1;
+                if (pauseBtn.inside)
+                    pauseBtn.notClicked();
+                pauseBtn.inside = 0;
             }
         }
-        else
+
+        void restart()
         {
-            if (pauseBtn.inside)
-                pauseBtn.notClicked();
-            pauseBtn.inside = 0;
+            player1.sprite.setPosition(120,550);
+            player2.sprite.setPosition(880, 550);
+            ball.sprite.setPosition(500, 100);
         }
-    }
 
-    void restart()
-    {
-        player1.sprite.setPosition(120,550);
-        player2.sprite.setPosition(880, 550);
-        ball.sprite.setPosition(500, 100);
-    }
-
-    //Rendering
-    void render(sf::RenderWindow& window)
-    {
-        window.draw(ground);
-        window.draw(ball.sprite);
-        window.draw(player1.sprite);
-        window.draw(player2.sprite);
-        window.draw(goal1);
-        window.draw(goal2);
-        window.draw(pauseBtn.sprite);
-    }
+        // Rendering
+        void render(sf::RenderWindow& window)
+        {
+            window.draw(ground);
+            window.draw(ball.sprite);
+            window.draw(player1.sprite);
+            window.draw(player2.sprite);
+            window.draw(goal1);
+            window.draw(goal2);
+            window.draw(pauseBtn.sprite);
+        }
 }Game;
 
+/// Menu Struct, contains all different menus of the game
 struct Menu
 {    
+    /// Main Menu, (Added by Tawfik)
     struct Main
     {   
         /////////////////VARIABLES
@@ -559,8 +575,7 @@ struct Menu
         }
     };
 
-    //Mariam//
-    //credits//
+    /// Credits Menu, (Added by Mariam)
     struct Credits
     {
 
@@ -635,9 +650,7 @@ struct Menu
 
     };
 
-
-    //Mariam//
-    //instructions//
+    /// Instructions Menu, (Added by Mariam)
     struct Instructions
     {
         //instructions photo
@@ -704,7 +717,7 @@ struct Menu
 
     };
 
-    //Menna//
+    /// Pause Menu, (Added by Menna)
     struct Pause
     {
         // VARIABLES
@@ -712,6 +725,7 @@ struct Menu
         Button::Round btn[n];
         
         char btnsession[n] = { 'r','s','m','u','i','h' };
+        
         /*
             r(return) Cancel
             s(single) Restart
@@ -860,6 +874,7 @@ int main()
 {
     //variables
     char screen='h'; // to know which screen to render and handle
+
     /*
         h(Home) Main Menu
         s(Single) SinglePlayer
@@ -869,6 +884,7 @@ int main()
         i(instructions)
         p(Pause)    
     */
+
     sf::Vector2f mousePos; //to save current mouse position
 
     //Creating window
@@ -918,6 +934,7 @@ int main()
                     if(screen == 's')
                         global.GamePaused=1;
                     break;
+
                 //Mouse Events
                 case sf::Event::MouseMoved:
                     mousePos = sf::Vector2f(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
@@ -930,6 +947,7 @@ int main()
                         break;
                     }
                     break;
+
                 //Keyboard Events
                 case sf::Event::KeyPressed:
                     switch (e.key.code)
@@ -948,6 +966,7 @@ int main()
                         break;
                     }
                     break;
+
                 case sf::Event::KeyReleased:
                     switch (e.key.code)
                     {
@@ -994,7 +1013,7 @@ int main()
         
         switch (screen)
         {
-        case 'h': //Default which is main menu
+        case 'h': //Default which is main menu (home)
             main.render(window);
             break;
         case 's': //Single Player
