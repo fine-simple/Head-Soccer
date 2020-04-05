@@ -377,7 +377,7 @@ struct Match
     //Sounds
     sf::SoundBuffer kickBallSoundbuff;
     sf::Sound kickBallSound;
-
+    
     //Buttons
     Button::Round pauseBtn;
 
@@ -589,7 +589,7 @@ struct Menu
             
             //Cancel Button
             returnBtn.create("Cancel");
-            returnBtn.sprite.setPosition(screenWidth / 9 * 7, 10);
+            returnBtn.sprite.setPosition(screenWidth - 50, 30);
             returnBtn.sprite.setScale(0.25f,0.25f);
         }
         
@@ -730,8 +730,6 @@ struct Menu
         
         //Title
         sf::Text paused;
-        sf::Text title;
-        sf::String titleString[n] = {"Return","Restart","Mute Sounds", "Unmute Sounds","Instructions","Home" };
 
         // FUNCTIONS
         void create()
@@ -772,12 +770,6 @@ struct Menu
             paused.setString("PAUSED");
             paused.setOrigin(paused.getLocalBounds().width / 2, paused.getGlobalBounds().height / 2);
             paused.setPosition(screenWidth / 2, screenHeight / 2 - 180);
-
-            //Current Button Title
-            title.setFont(global.BtnFont);
-            title.setOrigin(title.getGlobalBounds().width / 2, title.getGlobalBounds().height / 2);
-            title.setPosition(screenWidth / 2.2f,screenHeight / 1.85f);
-            title.setCharacterSize(25);
         }
 
         void Logic(sf::RenderWindow& window, char& session, sf::Vector2f& mousePos)
@@ -791,7 +783,6 @@ struct Menu
                         btn[i].clicked();
                         global.btnHover.play();
                         btn[i].inside = 1;
-                        title.setString(titleString[i]);
                     }
                     
                     if (global.LeftClick)
@@ -830,7 +821,6 @@ struct Menu
                     if (btn[i].inside)
                     {
                         btn[i].notClicked();
-                        title.setString("");
                     }
                     btn[i].inside = 0;
                 }
@@ -847,12 +837,10 @@ struct Menu
             {
                 window.draw(btn[i].sprite);
             }
-
-            window.draw(title);
         }
     };
 };
- 
+
 void loadScreen(sf::RenderWindow& window)
 {
     sf::Text title;
