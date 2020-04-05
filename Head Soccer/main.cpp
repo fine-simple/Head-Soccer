@@ -420,7 +420,152 @@ struct Menus
     };
 };
 
+struct rButton
+{
+    sf::Texture Tex;
+    sf::Vector2f size;
+    sf::Sprite sprite;
+    sf::SoundBuffer btnHoverbufr, btnClickbufr;
+    sf::Sound btnHover, btnClick;
+    bool inside = 0;
+    void lock()
+    {
+        sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
+    }
+    void notClicked()
+    {
+        sprite.setTextureRect(sf::IntRect(0, 0, static_cast<int>(size.x), static_cast<int>(size.y)));
+    }
+    void clicked()
+    {
+        sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
+    }
+    void create()
+    {
+        size = sf::Vector2f(static_cast<float>(Tex.getSize().x), static_cast<float>(Tex.getSize().y));
+        size.x /= 3;
+        notClicked();
+        btnHoverbufr.loadFromFile("Data/Sounds/btnHover.wav");
+        btnHover.setBuffer(btnHoverbufr);
+        btnClickbufr.loadFromFile("Data/Sounds/btnClick.wav");
+        btnClick.setBuffer(btnClickbufr);
+    }
+};
+struct PauseMenu
+{
+    // VARIABLES
+    static const int n = 5;
+    rButton btn[n];
+    char btnsession[n] = { 'r','s','m','i','h' };
 
+    sf::Texture bgT;
+    sf::Sprite bg;
+    sf::Font font;
+    sf::Text paused;
+
+    //Cursor
+    sf::Texture cursorTexture;
+    sf::Sprite cursor;
+
+    //Sounds
+    sf::SoundBuffer btnHoverbufr, btnClickbufr;
+    sf::Sound btnHover, btnClick;
+
+    // FUNCTIONS
+    void create()
+    {
+        // 1-resume 2-restart 3-mute 4-instructions 5-main menu
+        sf::String s[5] = { "Cancel.png","restart.png","mute.png","inst.png","Menu.png" };
+        for (int i = 0; i < n; i++)
+        {
+            btn[i].Tex.loadFromFile("Data/Images/" + s[i]);
+            btn[i].sprite.setTexture(btn[i].Tex);
+            btn[i].sprite.setScale(0.4, 0.4);
+            btn[i].sprite.setOrigin(btn[i].Tex.getSize().x / 6, btn[i].Tex.getSize().y / 6);
+            btn[i].create();
+        }
+        // Buttons
+
+        btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70);
+        btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70);
+        btn[3].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70);
+        btn[4].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70);
+
+        // Background and text
+        bgT.loadFromFile("Data/Images/pause menu.png");
+        bg.setTexture(bgT);
+        bg.setOrigin(bgT.getSize().x / 2, bgT.getSize().y / 2);
+        bg.setScale(1, 1.05);
+        bg.setPosition(screenWidth / 2, screenHeight / 2 + 50);
+        btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4 - 20, bgT.getSize().y - bgT.getSize().y / 4 + 20);
+        btn[0].sprite.setScale(0.15, 0.15);
+
+        font.loadFromFile("Data/Fonts/fontBtn.ttf");
+        paused.setFont(font);
+        paused.setCharacterSize(100);
+        paused.setString("PAUSED!");
+        paused.setOrigin(paused.getLocalBounds().width / 2, paused.getGlobalBounds().height / 2);
+        paused.setPosition(screenWidth / 2, screenHeight / 2 - 180);
+
+        //Load Sounds
+        btnHoverbufr.loadFromFile("Data/Sounds/btnHover.wav");
+        btnHover.setBuffer(btnHoverbufr);
+        btnClickbufr.loadFromFile("Data/Sounds/btnClick.wav");
+        btnClick.setBuffer(btnClickbufr);
+
+        //Create Cursor
+        cursorTexture.loadFromFile("Data/Images/cursor.png");
+        cursor.setTexture(cursorTexture);
+        cursor.setOrigin(cursorTexture.getSize().x / 7.0f, 4.0f);
+        cursor.setScale(0.08f, 0.08f);
+    }
+    void Logic(sf::RenderWindow& window, char& session, sf::Vector2f& mousePos)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            if (btn[i].sprite.getGlobalBounds().contains(mousePos))
+            {
+                if (!btn[i].inside)
+                {
+                    btn[i].clicked();
+                    btnHover.play();
+                    btn[i].inside = 1;
+                }
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                {
+                    btnClick.play();
+                    session = btnsession[i];
+                }
+            }
+            else
+            {
+                if (btn[i].inside)
+                    btn[i].notClicked();
+                btn[i].inside = 0;
+            }
+        }
+    }
+    //Moving Cursor with mouse position
+    void moveCursor(sf::Vector2f& mousePos)
+    {
+        cursor.setPosition(mousePos);
+    }
+
+    //Render Cursor
+    void renderCursor(sf::RenderWindow& window)
+    {
+        window.draw(cursor);
+    }
+    void render(sf::RenderWindow& window)
+    {
+        window.draw(bg);
+        window.draw(paused);
+        for (int i = 0; i < n; i++)
+        {
+            window.draw(btn[i].sprite);
+        }
+    }
+};
 
 struct Match
 {
