@@ -47,8 +47,7 @@ struct Global
         //Create Cursor
         cursorTexture.loadFromFile("Data/Images/cursor.png");
         cursor.setTexture(cursorTexture);
-        cursor.setOrigin(cursorTexture.getSize().x / 7.0f, 4.0f);
-        cursor.setScale(0.08f,0.08f);
+        cursor.setScale(0.06f,0.06f);
 
         //Create Background
         backgroundTexture.loadFromFile("Data/Images/Background1.jpg");
@@ -170,8 +169,11 @@ struct Object
             //Collisions
             if(sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision with body
             {
-                bodyV = sf::Vector2f(velocity.x * 4, velocity.y * 3);
-                velocity = -velocity;
+                bodyV = sf::Vector2f(velocity.x, velocity.y);
+                if(down)
+                bodyV += sf::Vector2f(20, 20);
+                velocity.x -= velocity.x;
+                velocity.y = -velocity.y;
                 return true;
             }
             return false;
@@ -312,19 +314,19 @@ struct Button
 
         /// Next 3 functions change the texture based on its state
 
-        void disabled()
-        {
-            frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2 + 30,0, static_cast<int>(size.x) - 28, static_cast<int>(size.y)));
-        }
-
         void notClicked()
         {
-            frame.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
+            frame.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
         void clicked()
         {
-            frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) + 12,0, static_cast<int>(size.x) - 27, static_cast<int>(size.y)));
+            frame.setTextureRect(sf::IntRect(static_cast<int>(size.x),0, static_cast<int>(size.x), static_cast<int>(size.y)));
+        }
+
+        void disabled()
+        {
+            frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2,0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
     };
@@ -434,7 +436,7 @@ struct Match
             if(player1.stopCollision(ball.sprite,ball.velocity) || player2.stopCollision(ball.sprite,ball.velocity))
                 kickBallSound.play();
 
-            player1.stopCollision(player2.sprite,player2.velocity);
+            // player1.stopCollision(player2.sprite,player2.velocity);
 
             // Movement Control
             player1.move();
