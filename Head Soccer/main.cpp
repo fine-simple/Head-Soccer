@@ -11,14 +11,16 @@
 /// Global Struct, contains stuff that are used in more than one scope
 struct Global
 {
-    //Clicked inside the Game
-    bool LeftClick=0;
+    //if Mouse LEft Butto Clicked inside the Game
+    bool leftMouseBtn=0;
 
     //if Game is Paused
     bool GamePaused=0;
 
     //if to return from Instructions to Game
-    bool continueGame=0;
+    bool gotoPauseMenu=0;
+
+    sf::Vector2f mousePos; //to save current mouse position
 
     //Sounds
     sf::SoundBuffer btnHoverbufr, btnClickbufr;
@@ -57,12 +59,12 @@ struct Global
         BtnFont.loadFromFile("Data/Fonts/fontBtn.ttf");
     }
 
-    void Logic(sf::Vector2f& mousePos)
+    void Logic()
     {
         //Moving Cursor with mouse position
         cursor.setPosition(mousePos);
 
-        LeftClick=0; //Realese Left Click Button
+        leftMouseBtn=0; //Realese Left Click Button
     }
     
     //Render(Draw) Background
@@ -279,9 +281,9 @@ struct Button
     /// Responsible for Rectangular Shaped Buttons (Added by Tawfik)
     struct Rectangular
     {
-        sf::Texture frameTexture;
+        sf::Texture texture;
         sf::Vector2f size;
-        sf::Sprite frame;
+        sf::Sprite sprite;
         sf::Text title;
 
         bool inside=0;
@@ -289,46 +291,78 @@ struct Button
         void create(sf::Vector2f pos,std::string x)
         {
             // Button style and dimensions
-            frameTexture.loadFromFile("Data/Images/RecButton.png");
-            size = sf::Vector2f(static_cast<float>(frameTexture.getSize().x), static_cast<float>(frameTexture.getSize().y));
+            texture.loadFromFile("Data/Images/RecButton.png");
+            size = sf::Vector2f(static_cast<float>(texture.getSize().x), static_cast<float>(texture.getSize().y));
             size.x /= 3;
-            frame.setTexture(frameTexture);
-            notClicked();
-            frame.setScale(1,0.5);
-            frame.setOrigin(sf::Vector2f(size.x / 2.0f, size.y / 2.0f));
-            frame.setPosition(pos);
+            sprite.setTexture(texture);
+            notHoveredTexture();
+            sprite.setScale(1,0.5);
+            sprite.setOrigin(sf::Vector2f(size.x / 2.0f, size.y / 2.0f));
+            sprite.setPosition(pos);
 
             // Text inside button
             title.setFont(global.BtnFont);
             title.setCharacterSize(50);
             title.setString(x);
             title.setOrigin(title.getLocalBounds().width /2, title.getGlobalBounds().height / 2);
-            title.setPosition(frame.getPosition().x, frame.getPosition().y - 15);
-        }
-
-        void render(sf::RenderWindow& window)   // draws the button and its text
-        {
-            window.draw(frame);
-            window.draw(title);
+            title.setPosition(sprite.getPosition().x, sprite.getPosition().y - 15);
         }
 
         /// Next 3 functions change the texture based on its state
 
-        void notClicked()
+        void notHoveredTexture()
         {
-            frame.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x), static_cast<int>(size.y)));
+            sprite.setTextureRect(sf::IntRect(0,0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
-        void clicked()
+        void hoveredTexture()
         {
-            frame.setTextureRect(sf::IntRect(static_cast<int>(size.x),0, static_cast<int>(size.x), static_cast<int>(size.y)));
+            sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x),0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
-        void disabled()
+        void disabledTexture()
         {
-            frame.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2,0, static_cast<int>(size.x), static_cast<int>(size.y)));
+            sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2,0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
+        //Checks if Mouse Hovered button
+        bool mouseHover()
+        {
+            if(sprite.getGlobalBounds().contains(global.mousePos))
+            {
+                if(!inside)
+                {
+                    hoveredTexture();
+                    global.btnHover.play();
+                    inside=1;
+                }
+                return true;    
+            }
+            else
+            {
+                if(inside)
+                    notHoveredTexture();
+                inside=0;
+                return false;
+            }
+        }
+
+        //Checks if Mouse Pressed
+        bool mouseLeftClicked()
+        {
+            if( mouseHover() && global.leftMouseBtn)
+            {
+                global.btnClick.play();
+                return true;
+            }
+            else return false;
+        }   
+
+        void render(sf::RenderWindow& window)   // draws the button and its text
+        {
+            window.draw(sprite);
+            window.draw(title);
+        }
     };
 
     /// Responsible for Round Shaped Buttons (Added by Menna)
@@ -339,17 +373,17 @@ struct Button
         sf::Sprite sprite;
         bool inside = 0;
 
-        void disabled()
+        void disabledTexture()
         {
             sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
-        void notClicked()
+        void notHoveredTexture()
         {
             sprite.setTextureRect(sf::IntRect(0, 0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
 
-        void clicked()
+        void hoveredTexture()
         {
             sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x), 0, static_cast<int>(size.x), static_cast<int>(size.y)));
         }
@@ -369,8 +403,39 @@ struct Button
 
             size = sf::Vector2f(static_cast<float>(Tex.getSize().x), static_cast<float>(Tex.getSize().y));
             size.x /= 3;
-            notClicked();
+            notHoveredTexture();
         }
+
+        bool mouseHover()
+        {
+            if(sprite.getGlobalBounds().contains(global.mousePos))
+            {
+                if(!inside)
+                {
+                    hoveredTexture();
+                    global.btnHover.play();
+                    inside=1;
+                }
+                return true;    
+            }
+            else
+            {
+                if(inside)
+                    notHoveredTexture();
+                inside=0;
+                return false;
+            }
+        }
+
+        bool mouseLeftClicked()
+        {
+            if(mouseHover() && global.leftMouseBtn)
+            {
+                global.btnClick.play();
+                return true;
+            }
+        }
+
     };
     
 };
@@ -444,29 +509,10 @@ struct Match
             ball.move();
         }
     
-        void PauseLogic(sf::Vector2f& mousePos, char& session)
+        void PauseLogic(char& session)
         {
-            if(pauseBtn.sprite.getGlobalBounds().contains(mousePos))
-            {
-                if (!pauseBtn.inside)
-                {
-                    pauseBtn.clicked();
-                    global.btnHover.play();
-                    pauseBtn.inside = 1;
-                }
-            
-                if (global.LeftClick)
-                {
-                    global.btnClick.play();
-                    global.GamePaused=1;
-                }
-            }
-            else
-            {
-                if (pauseBtn.inside)
-                    pauseBtn.notClicked();
-                pauseBtn.inside = 0;
-            }
+            if(pauseBtn.mouseLeftClicked())    
+                global.GamePaused=1;
         }
 
         void restart()
@@ -526,7 +572,7 @@ struct Menu
         //Logic
 
         //When mouse hovers over buttons
-        void Logic(sf::RenderWindow& window, char& session,sf::Vector2f& mousePos)
+        void Logic(char& session)
         {   
             //Play Music
             if(!isPlaying)
@@ -538,32 +584,12 @@ struct Menu
             //Buttons Hovered or Clicked Actions
             for (int i = 0; i < noOfBtns; i++)
             {
-                if(btn[i].frame.getGlobalBounds().contains(mousePos))
+                if(btn[i].mouseLeftClicked())
                 {
-                    if (!btn[i].inside)
-                    {
-                        btn[i].clicked();
-                        global.btnHover.play();
-                        btn[i].inside = 1;
-                    }
-                    
-                    if (global.LeftClick)
-                    {
-                        global.btnClick.play();
-                        session = btnSession[i];
-                        BGMusic.stop();
-                        isPlaying=0;
-                    }
-                    
+                    session = btnSession[i];
+                    BGMusic.stop();
+                    isPlaying=0;
                 }
-                else
-                {
-                    if (btn[i].inside)
-                        btn[i].notClicked();
-                    btn[i].inside = 0;
-                    
-                }
-                
             }
         }
 
@@ -610,7 +636,7 @@ struct Menu
             returnBtn.sprite.setScale(0.25f,0.25f);
         }
         
-        void Logic(sf::Vector2f& mousePos, char& session)
+        void Logic(char& session)
         {
             if(!isPlaying)
             {
@@ -618,28 +644,11 @@ struct Menu
                 isPlaying=1;
             }
 
-            if(returnBtn.sprite.getGlobalBounds().contains(mousePos))
+            if(returnBtn.mouseLeftClicked())
             {
-                if (!returnBtn.inside)
-                {
-                    returnBtn.clicked();
-                    global.btnHover.play();
-                    returnBtn.inside = 1;
-                }
-                
-                if (global.LeftClick)
-                {
-                    global.btnClick.play();
-                    BGMusic.stop();
-                    isPlaying=0;
-                    session = 'h';
-                }
-            }
-            else
-            {
-                if (returnBtn.inside)
-                    returnBtn.notClicked();
-                returnBtn.inside = 0;
+                BGMusic.stop();
+                isPlaying=0;
+                session = 'h';
             }
         }
 
@@ -674,48 +683,29 @@ struct Menu
         }
         
         //Button Logic
-        void Logic(sf::Vector2f& mousePos, char& session)
+        void Logic(char& session)
         {
-            if(returnBtn.sprite.getGlobalBounds().contains(mousePos))
+            if(returnBtn.mouseLeftClicked())
             {
-                if (!returnBtn.inside)
+                if(global.gotoPauseMenu)
                 {
-                    returnBtn.clicked();
-                    global.btnHover.play();
-                    returnBtn.inside = 1;
+                    global.GamePaused=1;
+                    session = 's';
+                    global.gotoPauseMenu=0;
                 }
-                
-                if (global.LeftClick)
+                else
                 {
-                    global.btnClick.play();
-
-                    if(global.continueGame)
-                    {
-                        global.GamePaused=1;
-                        session = 's';
-                        global.continueGame=0;
-                    }
-                    else
-                    {
-                        session='h';
-                    }
-                    
+                    session='h';
                 }
-            }
-            else
-            {
-                if (returnBtn.inside)
-                    returnBtn.notClicked();
-                returnBtn.inside = 0;
             }
         }
 
-            //Rendering
-            void render(sf::RenderWindow& window)
-            {
-                window.draw(instructions);
-                window.draw(returnBtn.sprite);
-            }
+        //Rendering
+        void render(sf::RenderWindow& window)
+        {
+            window.draw(instructions);
+            window.draw(returnBtn.sprite);
+        }
 
     };
 
@@ -788,57 +778,37 @@ struct Menu
             paused.setPosition(screenWidth / 2, screenHeight / 2 - 180);
         }
 
-        void Logic(sf::RenderWindow& window, char& session, sf::Vector2f& mousePos)
+        void Logic(char& session)
         {
             for (int i = 0; i < n; i++)
             {
-                if (btn[i].sprite.getGlobalBounds().contains(mousePos))
+                if (btn[i].mouseLeftClicked())
                 {
-                    if (!btn[i].inside)
+                    switch (btnsession[i])
                     {
-                        btn[i].clicked();
-                        global.btnHover.play();
-                        btn[i].inside = 1;
+                    case 's':
+                        Game.restart();
+                    case 'r':
+                        global.GamePaused=0;
+                        session = 's';
+                        break;
+                    case 'm':
+                        global.soundEnabled=0;
+                        break;
+                    case 'u':
+                        global.soundEnabled=1;
+                        break;
+                    case 'i':
+                        global.gotoPauseMenu=1;
+                        global.GamePaused=0;
+                        session='i';
+                        break;
+                    case 'h':
+                        global.GamePaused=0;
+                        session='h';
+                        break;
                     }
-                    
-                    if (global.LeftClick)
-                    {
-                        global.btnClick.play();
-
-                        switch (btnsession[i])
-                        {
-                        case 's':
-                            Game.restart();
-                        case 'r':
-                            global.GamePaused=0;
-                            session = 's';
-                            break;
-                        case 'm':
-                            global.soundEnabled=0;
-                            break;
-                        case 'u':
-                            global.soundEnabled=1;
-                            break;
-                        case 'i':
-                            global.continueGame=1;
-                            global.GamePaused=0;
-                            session='i';
-                            break;
-                        case 'h':
-                            global.GamePaused=0;
-                            session='h';
-                            break;
-                        }
-                        // sf::sleep(sf::milliseconds(150));
-                    }
-                }
-                else
-                {
-                    if (btn[i].inside)
-                    {
-                        btn[i].notClicked();
-                    }
-                    btn[i].inside = 0;
+                
                 }
             }
         }
@@ -886,8 +856,6 @@ int main()
         i(instructions)
         p(Pause)    
     */
-
-    sf::Vector2f mousePos; //to save current mouse position
 
     //Creating window
     sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Head Soccer", sf::Style::Close | sf::Style::Titlebar);
@@ -939,13 +907,13 @@ int main()
 
                 //Mouse Events
                 case sf::Event::MouseMoved:
-                    mousePos = sf::Vector2f(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
+                    global.mousePos = sf::Vector2f(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
                     break;
                 case sf::Event::MouseButtonPressed:
                     switch (e.key.code)
                     {
                     case sf::Mouse::Left:
-                        global.LeftClick=1;
+                        global.leftMouseBtn=1;
                         break;
                     }
                     break;
@@ -992,22 +960,22 @@ int main()
             switch (screen)
             {
             case 'h':
-                main.Logic(window, screen, mousePos);
+                main.Logic(screen);
                 break;
             case 's':
                 Game.SingleLogic();
-                Game.PauseLogic(mousePos, screen);
+                Game.PauseLogic(screen);
                 break;
             case 'c':
-                credits.Logic(mousePos, screen);
+                credits.Logic(screen);
                 break;
             case 'i':
-                instructions.Logic(mousePos, screen);
+                instructions.Logic(screen);
                 break;
             }
-        else pause.Logic(window, screen, mousePos);
+        else pause.Logic(screen);
         
-        global.Logic(mousePos);
+        global.Logic();
 
         //Rendering
         window.clear();
