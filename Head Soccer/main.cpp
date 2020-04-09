@@ -170,40 +170,48 @@ struct Object
         
         bool ballCollision(sf::Sprite& body,sf::Vector2f& bodyV)
         {
+            bool atRight=velocity.x >= 2.5f && body.getPosition().x > sprite.getPosition().x;
+            bool atLeft = velocity.x <= -2.5f && body.getPosition().x < sprite.getPosition().x;
+            bool above =body.getPosition().y < sprite.getPosition().y;
+            bool atBottom=body.getPosition().y > sprite.getPosition().y;
+
             if(sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision Detection
             {
-                if(body.getPosition().x < sprite.getPosition().x) //Ball is at Left of the Player
+                if( atLeft ) //Ball is at Left of the Player
                 {
-                    body.setPosition(sprite.getPosition().x - (sprite.getGlobalBounds().width - 5), body.getPosition().y);
-                    
-                    if(velocity.x == -2.5f)
-                        bodyV.x = velocity.x * 3;
-                    else bodyV.x = -bodyV.x + bodyV.x * 0.8f;
+                    body.setPosition(sprite.getPosition().x - (sprite.getGlobalBounds().width - 5), body.getPosition().y);                    
+                    bodyV.x = velocity.x * 3;
                 }
-                else if (body.getPosition().x > sprite.getPosition().x) //Ball is at Right of the Player
+                else if (atRight) //Ball is at Right of the Player
                 {
                     body.setPosition(sprite.getPosition().x + (sprite.getGlobalBounds().width - 5), body.getPosition().y);
-                    
-                    if(velocity.x == 2.5)
-                        bodyV.x = velocity.x * 3;
-                    else bodyV.x = -bodyV.x + bodyV.x * 0.8f;
+                    bodyV.x = velocity.x * 3;
+                }
+                else
+                {
+                    bodyV.x = -bodyV.x + bodyV.x * 0.8f;
+                    return false;
                 }
 
-                if(body.getPosition().y < sprite.getPosition().y) //Ball is at above the Player
+                if(above) //Ball is above the Player
                 {                    
                     if(velocity.y < 0)
                         bodyV.y = velocity.y * 3;
+                    else bodyV.y = -bodyV.y + bodyV.y * 0.7f;
+                }
+                else if (atBottom) //Ball is at bottom of the Player
+                {                   
+                    if(velocity.y > 0)
+                    {
+                        bodyV.y = velocity.y * 3;
+                        if(velocity.x == 0)
+                            bodyV.x += 2.5;
+                    }
                     else bodyV.y = -bodyV.y + bodyV.y * 0.8f;
                 }
-                else if (body.getPosition().x > sprite.getPosition().x) //Ball is at bottom of the Player
-                {                    
-                    if(velocity.y > 0)
-                        bodyV.y = velocity.y * 3;
-                    else bodyV.x = -bodyV.x + bodyV.x * 0.8f;
-
-                    if(down)    //Kick Ball
-                        bodyV = {20, -27};
-                }
+                
+                if(down && atBottom && atRight)
+                    bodyV = {20, -27};
 
                 return true;
             }
@@ -507,8 +515,8 @@ struct Match
         void create()
         {
             // Players
-            player1.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
-            player2.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
+            player1.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
+            player2.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
         
             //Ball
             ball.create();
