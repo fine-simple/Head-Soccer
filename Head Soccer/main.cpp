@@ -544,7 +544,21 @@ struct Match
 
             ball.goalCollision(goal1);
             ball.goalCollision(goal2);
-            
+
+            // Movement Control
+            player1.move();
+            ball.move();
+        }
+
+        void MultiLogic()
+        {
+            // Collisions
+            if( (player1.ballCollision(ball.sprite,ball.velocity) || player2.ballCollision(ball.sprite, ball.velocity)) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
+                kickBallSound.play();
+
+            ball.goalCollision(goal1);
+            ball.goalCollision(goal2);
+
             // Movement Control
             player1.move();
             player2.move();
@@ -975,6 +989,18 @@ int main()
                     case sf::Keyboard::Left:
                         Game.player1.leftPressed();
                         break;
+                    case sf::Keyboard::W:
+                        Game.player2.upPressed();
+                        break;
+                    case sf::Keyboard::S:
+                        Game.player2.downPressed();
+                        break;
+                    case sf::Keyboard::D:
+                        Game.player2.rightPressed();
+                        break;
+                    case sf::Keyboard::A:
+                        Game.player2.leftPressed();
+                        break;
                     }
                     break;
 
@@ -989,6 +1015,15 @@ int main()
                         break;
                     case sf::Keyboard::Left:
                         Game.player1.leftRealesed();
+                        break;
+                    case sf::Keyboard::S:
+                        Game.player2.downRealesed();
+                        break;
+                    case sf::Keyboard::D:
+                        Game.player2.rightRealesed();
+                        break;
+                    case sf::Keyboard::A:
+                        Game.player2.leftRealesed();
                         break;
                     }
                     break;
@@ -1005,6 +1040,10 @@ int main()
                 break;
             case 's':
                 Game.SingleLogic();
+                Game.PauseLogic(screen);
+                break;
+            case 'm':
+                Game.MultiLogic();
                 Game.PauseLogic(screen);
                 break;
             case 'c':
@@ -1031,6 +1070,7 @@ int main()
             Game.render(window);
             break;
         case 'm': //Multiplayer
+            Game.render(window);
             break;
         case 'i': //Instructions
             instructions.render(window);
