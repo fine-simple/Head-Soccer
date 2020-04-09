@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <string>
-
+#include <iostream>
 //Constants
 #define screenWidth 1000
 #define screenHeight 650
@@ -11,7 +11,7 @@
 /// Global Struct, contains stuff that are used in more than one scope
 struct Global
 {
-    //if Mouse LEft Butto Clicked inside the Game
+    //if Mouse Left Button Clicked inside the Game
     bool leftMouseBtn=0;
 
     //if Game is Paused
@@ -147,7 +147,7 @@ struct Object
             }
             else gravity.activate(sprite, velocity);
 
-            if(down && currentBottomPos < groundTop) velocity.y = 5.0f;
+            // if(down && currentBottomPos < groundTop) velocity.y = 5.0f;
             if(right && currentRightPos < screenWidth) velocity.x = 2.5f;
             if(left && currentLeftPos > 0) velocity.x = -2.5f;
             
@@ -166,18 +166,48 @@ struct Object
             sprite.move(velocity);
         }
 
-        bool stopCollision(sf::Sprite& body,sf::Vector2f& bodyV)
+        //Collisions
+        
+        bool ballCollision(sf::Sprite& body,sf::Vector2f& bodyV)
         {
-            //Collisions
-            if(sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision with body
+            if(sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision Detection
             {
-                bodyV = sf::Vector2f(velocity.x, velocity.y);
-                if(down)
-                bodyV += sf::Vector2f(20, 20);
-                velocity.x -= velocity.x;
-                velocity.y = -velocity.y;
+                if(body.getPosition().x < sprite.getPosition().x) //Ball is at Left of the Player
+                {
+                    body.setPosition(sprite.getPosition().x - (sprite.getGlobalBounds().width - 5), body.getPosition().y);
+                    
+                    if(velocity.x == -2.5f)
+                        bodyV.x = velocity.x * 3;
+                    else bodyV.x = -bodyV.x + bodyV.x * 0.8f;
+                }
+                else if (body.getPosition().x > sprite.getPosition().x) //Ball is at Right of the Player
+                {
+                    body.setPosition(sprite.getPosition().x + (sprite.getGlobalBounds().width - 5), body.getPosition().y);
+                    
+                    if(velocity.x == 2.5)
+                        bodyV.x = velocity.x * 3;
+                    else bodyV.x = -bodyV.x + bodyV.x * 0.8f;
+                }
+
+                if(body.getPosition().y < sprite.getPosition().y) //Ball is at above the Player
+                {                    
+                    if(velocity.y < 0)
+                        bodyV.y = velocity.y * 3;
+                    else bodyV.y = -bodyV.y + bodyV.y * 0.8f;
+                }
+                else if (body.getPosition().x > sprite.getPosition().x) //Ball is at bottom of the Player
+                {                    
+                    if(velocity.y > 0)
+                        bodyV.y = velocity.y * 3;
+                    else bodyV.x = -bodyV.x + bodyV.x * 0.8f;
+
+                    if(down)    //Kick Ball
+                        bodyV = {20, -27};
+                }
+
                 return true;
             }
+
             return false;
         }
         
@@ -235,7 +265,7 @@ struct Object
         sf::Sprite sprite;
 
         const float radius=25;
-
+        const float lostE = 0.25f;
         // Physics
         Gravity gravity;
         sf::Vector2f velocity;
@@ -252,8 +282,7 @@ struct Object
         }
 
         void move()
-        {
-            const float lostE = 0.25f;
+        {   
             //Screen Boundries
             if(sprite.getGlobalBounds().left <= 0) //Left Boundries
             {
@@ -271,13 +300,19 @@ struct Object
             sprite.move(velocity);
             sprite.rotate(velocity.x);
         }
+
+        void goalCollision(sf::Sprite& body)
+        {
+            sf::FloatRect goalTop = {body.getGlobalBounds().left, body.getGlobalBounds().top, body.getGlobalBounds().width, 20};
+            if(goalTop.intersects(sprite.getGlobalBounds()))
+                velocity.y = -velocity.y + velocity.y * lostE;
+        }
     };    
 };
 
 /// Button Struct, responsible for making and rendering all different buttons in the game
 struct Button
 {
-    
     /// Responsible for Rectangular Shaped Buttons (Added by Tawfik)
     struct Rectangular
     {
@@ -333,7 +368,8 @@ struct Button
                 if(!inside)
                 {
                     hoveredTexture();
-                    global.btnHover.play();
+                    if(global.soundEnabled)
+                        global.btnHover.play();
                     inside=1;
                 }
                 return true;    
@@ -352,7 +388,9 @@ struct Button
         {
             if( mouseHover() && global.leftMouseBtn)
             {
-                global.btnClick.play();
+                if(global.soundEnabled)
+                    global.btnClick.play();
+                global.leftMouseBtn=0;
                 return true;
             }
             else return false;
@@ -413,10 +451,11 @@ struct Button
                 if(!inside)
                 {
                     hoveredTexture();
-                    global.btnHover.play();
+                    if(global.soundEnabled)
+                        global.btnHover.play();
                     inside=1;
                 }
-                return true;    
+                return true;
             }
             else
             {
@@ -431,7 +470,9 @@ struct Button
         {
             if(mouseHover() && global.leftMouseBtn)
             {
-                global.btnClick.play();
+                if(global.soundEnabled)
+                    global.btnClick.play();
+                global.leftMouseBtn=0;
                 return true;
             }
         }
@@ -498,11 +539,12 @@ struct Match
         void SingleLogic()
         {
             // Collisions
-            if(player1.stopCollision(ball.sprite,ball.velocity) || player2.stopCollision(ball.sprite,ball.velocity))
+            if(player1.ballCollision(ball.sprite,ball.velocity) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
                 kickBallSound.play();
 
-            // player1.stopCollision(player2.sprite,player2.velocity);
-
+            ball.goalCollision(goal1);
+            ball.goalCollision(goal2);
+            
             // Movement Control
             player1.move();
             player2.move();
@@ -520,6 +562,10 @@ struct Match
             player1.sprite.setPosition(120,550);
             player2.sprite.setPosition(880, 550);
             ball.sprite.setPosition(500, 100);
+
+            player1.velocity = {};
+            player2.velocity = {};
+            ball.velocity = {};
         }
 
         // Rendering
@@ -575,7 +621,7 @@ struct Menu
         void Logic(char& session)
         {   
             //Play Music
-            if(!isPlaying)
+            if(!isPlaying && global.soundEnabled)
             {
                 BGMusic.play();
                 isPlaying=1;
@@ -638,7 +684,7 @@ struct Menu
         
         void Logic(char& session)
         {
-            if(!isPlaying)
+            if(!isPlaying && global.soundEnabled)
             {
                 BGMusic.play();
                 isPlaying=1;
@@ -716,17 +762,6 @@ struct Menu
         static const int n = 6;
         Button::Round btn[n];
         
-        char btnsession[n] = { 'r','s','m','u','i','h' };
-        
-        /*
-            r(return) Cancel
-            s(single) Restart
-            m(Mute) Mute Sounds
-            u(Unmute) Unmute Sounds
-            i(instructions)
-            h(Home) Main Menu
-        */
-        
         //Background for Buttons
         sf::Texture bgT;
         sf::Sprite bg;
@@ -755,18 +790,19 @@ struct Menu
             // Buttons
             
             // 1-resume 2-restart 3-mute 4-unmute 5-instructions 6-main menu
-            sf::String s[] = { "Cancel","Restart","Mute", "Unmute","Inst","Menu" };
+            sf::String s[] = { "Cancel","Restart","Mute", "Unmute","Inst","Home" };
             for (int i = 0; i < n; i++)
             {
                 btn[i].create(s[i]);
             }
 
-            btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4 - 20, bgT.getSize().y - bgT.getSize().y / 4 + 20);
-            btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70);
-            btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70);
-            btn[3].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70);
-            btn[4].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70);
-            btn[5].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70);
+            btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4 - 20, bgT.getSize().y - bgT.getSize().y / 4 + 20); //Cancel Button
+            btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70); //Restart Button
+            btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70); //Mute Button
+            btn[3].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70); //Unmute Button
+            btn[3].sprite.setScale(0,0);
+            btn[4].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70); //Instructions Button
+            btn[5].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70); //Home Button
 
             //Text
 
@@ -784,41 +820,46 @@ struct Menu
             {
                 if (btn[i].mouseLeftClicked())
                 {
-                    switch (btnsession[i])
+                    switch (i)
                     {
-                    case 's':
+                    case 1: //Restart
                         Game.restart();
-                    case 'r':
+                    case 0: //Cancel
                         global.GamePaused=0;
                         session = 's';
                         break;
-                    case 'm':
+                    case 2: //Mute
                         global.soundEnabled=0;
+                        btn[2].sprite.setScale(0,0);
+                        btn[3].sprite.setScale(0.4f,0.4f);
                         break;
-                    case 'u':
+                    case 3: //Unmute
                         global.soundEnabled=1;
+                        btn[2].sprite.setScale(0.4f,0.4f);
+                        btn[3].sprite.setScale(0,0);
                         break;
-                    case 'i':
+                    case 4: //Instructions
                         global.gotoPauseMenu=1;
                         global.GamePaused=0;
                         session='i';
                         break;
-                    case 'h':
+                    case 5: //Home
                         global.GamePaused=0;
                         session='h';
                         break;
                     }
-                
                 }
             }
         }
 
         void render(sf::RenderWindow& window)
         {
+            //Draw Background, Banner, Title
             window.draw(Blur);
             window.draw(bg);
             window.draw(paused);
 
+            //Draw Buttons
             for (int i = 0; i < n; i++)
             {
                 window.draw(btn[i].sprite);
