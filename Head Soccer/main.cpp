@@ -210,7 +210,7 @@ struct Object
                     else bodyV.y = -bodyV.y + bodyV.y * 0.8f;
                 }
                 
-                if(down && atBottom && atRight)
+                if(down && !above && atRight)
                     bodyV = {20, -27};
 
                 return true;
@@ -515,8 +515,8 @@ struct Match
         void create()
         {
             // Players
-            player1.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
-            player2.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
+            player1.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
+            player2.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
         
             //Ball
             ball.create();
