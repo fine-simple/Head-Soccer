@@ -495,7 +495,7 @@ struct Match
     //// VARIABLES ////
 
         // Textures declaration
-        sf::Texture g1,g2;
+        sf::Texture gl;
 
         // Bodies declaration
         sf::Sprite goal1, goal2;
@@ -522,13 +522,13 @@ struct Match
             ball.create();
         
             //Goals
-            g1.loadFromFile("Data/Images/Goal1.png");
-            goal1.setTexture(g1);
+            gl.loadFromFile("Data/Images/Goal.png");
+            goal1.setTexture(gl);
             goal1.setOrigin(sf::Vector2f(50, 90));
             goal1.setPosition(sf::Vector2f(20, 500));
         
-            g2.loadFromFile("Data/Images/Goal2.png");
-            goal2.setTexture(g2);
+            goal2.setTexture(gl);
+            goal2.setTextureRect(sf::IntRect(gl.getSize().x,0,-gl.getSize().x,gl.getSize().y));
             goal2.setOrigin(sf::Vector2f(50, 90));
             goal2.setPosition(sf::Vector2f(980, 500));
 
