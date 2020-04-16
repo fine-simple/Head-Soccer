@@ -26,7 +26,7 @@ struct Global
     //Sounds
     sf::SoundBuffer btnHoverbufr, btnClickbufr;
     sf::Sound btnHover, btnClick;
-    bool soundEnabled =1;
+    bool soundEnabled =0;
     
     //Cursor
     sf::Texture cursorTexture;
@@ -202,14 +202,15 @@ struct Object
             {
                 if (LPlyr==1)
                 {
-                    imgCnt++;
-                    imgCnt %= 3;
+                    if(imgCnt < 2)
+                        imgCnt++;
                     sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
                 }
                 else if (LPlyr == 0)
                 {
-                    imgCnt++;
-                    imgCnt %= 3;
+                    if(imgCnt < 3)
+                        imgCnt++;
+
                     sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, -1 * width, height));
                 }
             }
