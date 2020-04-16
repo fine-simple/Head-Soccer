@@ -119,18 +119,44 @@ struct Object
         sf::Sprite sprite;
         sf::Vector2f velocity;
 
+        //Animation
+        bool LPlyr =1;
+        int width=0;
+        int height =0;
+        int imgCnt = 0;
+        
         Gravity gravity; //chracter gravity
         //FUNCTIONS
 
-        void create(std::string path,sf::Vector2f pos)
+        void createL(std::string path,sf::Vector2f pos)
         {
+            LPlyr=1;
             texture.loadFromFile(path);
+            width = texture.getSize().x / 3.0f;
+            height = texture.getSize().y;
             sprite.setTexture(texture);
-            sprite.setPosition(pos);
+            sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
             sprite.setOrigin(sprite.getGlobalBounds().width / 2,sprite.getGlobalBounds().height / 2);
+            sprite.setScale(0.30f, 0.30f);
+            sprite.setPosition(pos);
             gravity.lostE = 0.9f;
             gravity.dv = 0.15f;
         }
+ 
+        void createR(std::string path, sf::Vector2f pos)
+        {
+            LPlyr=0;
+            texture.loadFromFile(path);
+            width = texture.getSize().x / 3.0f;
+            height = texture.getSize().y;
+            sprite.setTexture(texture);
+            sprite.setTextureRect(sf::IntRect((imgCnt+1) * width, 0, -1 * width, height));
+            sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
+            sprite.setScale(0.30f, 0.30f);
+            sprite.setPosition(pos);
+            gravity.lostE = 0.9f;
+            gravity.dv = 0.15f;
+        } 
 
         void move()
         {
@@ -172,7 +198,7 @@ struct Object
         {
             bool atRight=velocity.x >= 2.5f && body.getPosition().x > sprite.getPosition().x;
             bool atLeft = velocity.x <= -2.5f && body.getPosition().x < sprite.getPosition().x;
-            bool above =body.getPosition().y < sprite.getPosition().y;
+            bool atAbove =body.getPosition().y < sprite.getPosition().y;
             bool atBottom=body.getPosition().y > sprite.getPosition().y;
 
             if(sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision Detection
@@ -193,7 +219,7 @@ struct Object
                     return false;
                 }
 
-                if(above) //Ball is above the Player
+                if(atAbove) //Ball is above the Player
                 {                    
                     if(velocity.y < 0)
                         bodyV.y = velocity.y * 3;
@@ -210,8 +236,13 @@ struct Object
                     else bodyV.y = -bodyV.y + bodyV.y * 0.8f;
                 }
                 
-                if(down && !above && atRight)
-                    bodyV = {20, -27};
+                if(down)
+                {
+                    if(LPlyr && atRight)
+                        bodyV = {20, -27};
+                    else if(!LPlyr && atLeft)
+                        bodyV = {-20, -27};
+                }
 
                 return true;
             }
@@ -515,8 +546,8 @@ struct Match
         void create()
         {
             // Players
-            player1.create("Data/Images/Head1.png", sf::Vector2f(120, 550));
-            player2.create("Data/Images/Head2.png", sf::Vector2f(880, 550));
+            player1.createL("Data/Images/BossBabySheet.png", sf::Vector2f(120, 550));
+            player2.createR("Data/Images/TimSheet.png", sf::Vector2f(880, 550));
         
             //Ball
             ball.create();
