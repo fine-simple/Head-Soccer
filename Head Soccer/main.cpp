@@ -3,6 +3,7 @@
 #include <SFML/Audio.hpp>
 #include <string>
 #include <iostream>
+unsigned long long point=0;
 //Constants
 #define screenWidth 1000
 #define screenHeight 650
@@ -177,6 +178,8 @@ struct Object
             if(right && currentRightPos < screenWidth) velocity.x = 2.5f;
             if(left && currentLeftPos > 0) velocity.x = -2.5f;
             
+            animateKick();
+            
             //Screen Boundries
             if(sprite.getGlobalBounds().left <= 0) //Left Boundries
             {
@@ -190,6 +193,40 @@ struct Object
 
             //Movement Action
             sprite.move(velocity);
+        }
+        //Animtaion
+
+        void animateKick()
+        {
+            if(down)
+            {
+                if (LPlyr==1)
+                {
+                    imgCnt++;
+                    imgCnt %= 3;
+                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
+                }
+                else if (LPlyr == 0)
+                {
+                    imgCnt++;
+                    imgCnt %= 3;
+                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, -1 * width, height));
+                }
+            }
+            else
+            {
+                if (LPlyr == 1)
+                {
+                    imgCnt = 0;
+                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
+                }
+                else if (LPlyr==0)
+                {
+                    imgCnt = 1;
+                    sprite.setTextureRect(sf::IntRect(imgCnt* width, 0, -1*width, height));
+                }
+            }
+            
         }
 
         //Collisions
@@ -236,11 +273,13 @@ struct Object
                     else bodyV.y = -bodyV.y + bodyV.y * 0.8f;
                 }
                 
-                if(down)
+                if(down && !(body.getPosition().y <= sprite.getPosition().y - 5)) //Kicking ball if down pressed
                 {
-                    if(LPlyr && atRight)
+                    if(LPlyr && body.getPosition().x >= sprite.getPosition().x)
+                    {
                         bodyV = {20, -27};
-                    else if(!LPlyr && atLeft)
+                    }
+                    else if(!LPlyr && body.getPosition().x <= sprite.getPosition().x)
                         bodyV = {-20, -27};
                 }
 
@@ -260,25 +299,6 @@ struct Object
         void downPressed()
         {
             down=1;
-            if (LPlyr==1)
-            {
-                imgCnt++;
-                imgCnt %= 3;
-                sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
-            }
-            else if (LPlyr == 0)
-            {
-                if (imgCnt==0)
-                {
-                    imgCnt++;
-                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, -1*width, height));
-                }
-                else if (imgCnt==1)
-                {
-                    imgCnt++;
-                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, -1 * width, height));
-                }
-            }
         }
 
         void rightPressed()
@@ -301,16 +321,6 @@ struct Object
         void downRealesed()
         {
             down=0;
-            if (LPlyr == 1)
-            {
-                imgCnt = 0;
-                sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
-            }
-            else if (LPlyr==0)
-            {
-                imgCnt = 1;
-                sprite.setTextureRect(sf::IntRect(imgCnt* width, 0, -1*width, height));
-            }
         }
 
         void rightRealesed()
