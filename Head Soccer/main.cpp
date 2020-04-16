@@ -260,6 +260,25 @@ struct Object
         void downPressed()
         {
             down=1;
+            if (LPlyr==1)
+            {
+                imgCnt++;
+                imgCnt %= 3;
+                sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
+            }
+            else if (LPlyr == 0)
+            {
+                if (imgCnt==0)
+                {
+                    imgCnt++;
+                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, -1*width, height));
+                }
+                else if (imgCnt==1)
+                {
+                    imgCnt++;
+                    sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, -1 * width, height));
+                }
+            }
         }
 
         void rightPressed()
@@ -282,6 +301,16 @@ struct Object
         void downRealesed()
         {
             down=0;
+            if (LPlyr == 1)
+            {
+                imgCnt = 0;
+                sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
+            }
+            else if (LPlyr==0)
+            {
+                imgCnt = 1;
+                sprite.setTextureRect(sf::IntRect(imgCnt* width, 0, -1*width, height));
+            }
         }
 
         void rightRealesed()
@@ -548,7 +577,11 @@ struct Match
         {
             // Players
             player1.createL("Data/Images/BossBabySheet.png", sf::Vector2f(120, 550));
+            player1.downPressed();
+            player1.downRealesed();
             player2.createR("Data/Images/TimSheet.png", sf::Vector2f(880, 550));
+            player2.downPressed();
+            player2.downRealesed();
         
             //Ball
             ball.create();
