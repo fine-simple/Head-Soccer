@@ -132,7 +132,7 @@ struct Object
         {
             LPlyr=1;
             texture.loadFromFile(path);
-            width = texture.getSize().x / 3.0f;
+            width = texture.getSize().x / 3;
             height = texture.getSize().y;
             sprite.setTexture(texture);
             sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
@@ -147,7 +147,7 @@ struct Object
         {
             LPlyr=0;
             texture.loadFromFile(path);
-            width = texture.getSize().x / 3.0f;
+            width = texture.getSize().x / 3;
             height = texture.getSize().y;
             sprite.setTexture(texture);
             sprite.setTextureRect(sf::IntRect((imgCnt+1) * width, 0, -1 * width, height));
@@ -472,13 +472,13 @@ struct Button
             sprite.setTexture(Tex);
             
             if(Type == "Cancel")
-                sprite.setScale(0.15, 0.15);
+                sprite.setScale(0.15f, 0.15f);
             else
-                sprite.setScale(0.4, 0.4);
+                sprite.setScale(0.4f, 0.4f);
 
-            sprite.setOrigin(Tex.getSize().x / 6, Tex.getSize().y / 6);
+            sprite.setOrigin(static_cast<float>(Tex.getSize().x) / 6, static_cast<float>(Tex.getSize().y) / 6);
 
-            size = sf::Vector2f(static_cast<float>(Tex.getSize().x), static_cast<float>(Tex.getSize().y));
+            size = { static_cast<float>(Tex.getSize().x), static_cast<float>(Tex.getSize().y) };
             size.x /= 3;
             notHoveredTexture();
         }
@@ -514,6 +514,7 @@ struct Button
                 global.leftMouseBtn=0;
                 return true;
             }
+            return false;
         }
 
     };
@@ -831,8 +832,8 @@ struct Menu
             // Background
             bgT.loadFromFile("Data/Images/pause menu.png");
             bg.setTexture(bgT);
-            bg.setOrigin(bgT.getSize().x / 2, bgT.getSize().y / 2);
-            bg.setScale(1, 1.05);
+            bg.setOrigin(bgT.getSize().x / 2.0f, bgT.getSize().y / 2.0f);
+            bg.setScale(1.0f, 1.05f);
             bg.setPosition(screenWidth / 2, screenHeight / 2 + 50);
             
             //Semi Transparent Background
@@ -849,7 +850,7 @@ struct Menu
                 btn[i].create(s[i]);
             }
 
-            btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4 - 20, bgT.getSize().y - bgT.getSize().y / 4 + 20); //Cancel Button
+            btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4.0f - 20.0f, bgT.getSize().y - bgT.getSize().y / 4.0f + 20.0f); //Cancel Button
             btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70); //Restart Button
             btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70); //Mute Button
             btn[3].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70); //Unmute Button
