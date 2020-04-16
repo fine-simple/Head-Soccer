@@ -559,7 +559,7 @@ struct Match
             goal1.setPosition(sf::Vector2f(20, 500));
         
             goal2.setTexture(gl);
-            goal2.setTextureRect(sf::IntRect(gl.getSize().x,0,-gl.getSize().x,gl.getSize().y));
+            goal2.setTextureRect(sf::IntRect(gl.getSize().x,0,-1* gl.getSize().x,gl.getSize().y));
             goal2.setOrigin(sf::Vector2f(50, 90));
             goal2.setPosition(sf::Vector2f(980, 500));
 
