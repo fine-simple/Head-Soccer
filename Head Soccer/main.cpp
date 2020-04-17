@@ -138,7 +138,6 @@ struct Object
             sprite.setTexture(texture);
             sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
             sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
-            sprite.setScale(0.30f, 0.30f);
             sprite.setPosition(pos);
             gravity.lostE = 0.9f;
             gravity.dv = 0.15f;
@@ -153,7 +152,6 @@ struct Object
             sprite.setTexture(texture);
             sprite.setTextureRect(sf::IntRect((imgCnt + 1) * width, 0, -1 * width, height));
             sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
-            sprite.setScale(0.30f, 0.30f);
             sprite.setPosition(pos);
             gravity.lostE = 0.9f;
             gravity.dv = 0.15f;
