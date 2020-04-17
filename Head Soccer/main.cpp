@@ -2,8 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <string>
-#include <iostream>
-unsigned long long point = 0;
+
 //Constants
 #define screenWidth 1000
 #define screenHeight 650
@@ -129,31 +128,18 @@ struct Object
         Gravity gravity; //chracter gravity
         //FUNCTIONS
 
-        void createL(std::string path, sf::Vector2f pos)
+        void create(std::string path, sf::Vector2f pos,bool LeftPlayer)
         {
-            LPlyr = 1;
+            LPlyr = LeftPlayer;
             texture.loadFromFile(path);
             width = texture.getSize().x / 3;
             height = texture.getSize().y;
             sprite.setTexture(texture);
-            sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
+            if(LeftPlayer)
+                sprite.setTextureRect(sf::IntRect(imgCnt * width, 0, width, height));
+            else
+                sprite.setTextureRect(sf::IntRect((imgCnt + 1) * width, 0, -1 * width, height));
             sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
-            sprite.setScale(0.30f, 0.30f);
-            sprite.setPosition(pos);
-            gravity.lostE = 0.9f;
-            gravity.dv = 0.15f;
-        }
-
-        void createR(std::string path, sf::Vector2f pos)
-        {
-            LPlyr = 0;
-            texture.loadFromFile(path);
-            width = texture.getSize().x / 3;
-            height = texture.getSize().y;
-            sprite.setTexture(texture);
-            sprite.setTextureRect(sf::IntRect((imgCnt + 1) * width, 0, -1 * width, height));
-            sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
-            sprite.setScale(0.30f, 0.30f);
             sprite.setPosition(pos);
             gravity.lostE = 0.9f;
             gravity.dv = 0.15f;
@@ -600,12 +586,8 @@ struct Match
     void create()
     {
         // Players
-        player1.createL("Data/Images/BossBabySheet.png", sf::Vector2f(120, 550));
-        player1.downPressed();
-        player1.downRealesed();
-        player2.createR("Data/Images/TimSheet.png", sf::Vector2f(880, 550));
-        player2.downPressed();
-        player2.downRealesed();
+        player1.create("Data/Images/MojoSheet.png", sf::Vector2f(120, 550), 1);
+        player2.create("Data/Images/MetroSheet.png", sf::Vector2f(880, 550), 0);
 
         //Ball
         ball.create();
