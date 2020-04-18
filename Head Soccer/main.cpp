@@ -547,15 +547,13 @@ struct Button
 
 };
 
-
-bool LevelEnded = 0;
-sf::String x[] = { "Data/Images/BossBabySheet.png",  "Data/Images/ButterSheet.png", "Data/Images/GumballSheet.png", "Data/Images/MegaSheet.png" };
-sf::String y[] = { "Data/Images/TimSheet.png", "Data/Images/MojoSheet.png", "Data/Images/RobSheet.png", "Data/Images/MetroSheet.png" };
 //creating levels, (Added by Mariam) 
-int level = 0;
 struct Levels
 {
-
+    bool LevelEnded = 0;
+    std::string player[4] = { "Data/Images/BossBabySheet.png",  "Data/Images/ButterSheet.png", "Data/Images/GumballSheet.png", "Data/Images/MegaSheet.png" };
+    std::string enemy[4] = { "Data/Images/TimSheet.png", "Data/Images/MojoSheet.png", "Data/Images/RobSheet.png", "Data/Images/MetroSheet.png" };
+    int crntLvl = 3;
     //Level text
     sf::Font font;
     sf::Text text;
@@ -567,7 +565,7 @@ struct Levels
 
         font.loadFromFile("Data/Fonts/fontBtn.ttf");
         text.setFont(font);
-        sf::String s = "Level " + std::to_string(level + 1);;
+        sf::String s = "Level " + std::to_string(crntLvl + 1);;
         text.setString(s);
         text.setCharacterSize(50);
         text.setOrigin(text.getGlobalBounds().width / 2, text.getGlobalBounds().height / 2);
@@ -582,12 +580,12 @@ struct Levels
     void logic()
     {
 
-        if (level < 4)
+        if (crntLvl < 4)
         {
 
             if (LevelEnded)
             {
-                level++;
+                crntLvl++;
                 LevelEnded = 0;
             }
         }
@@ -598,7 +596,7 @@ struct Levels
     {
         window.draw(text);
     };
-}levels;
+};
 
 
 
@@ -636,13 +634,16 @@ struct Match
     sf::Text timer_cnt;
     bool end = 0, time_finished = 0;
 
+    //Levels
+    Levels levels;
+
     //// FUNCTIONS ////
 
     void create()
     {
         // Players
-        player1.create((x[level]), sf::Vector2f(120, 550), 1);
-        player2.create((y[level]), sf::Vector2f(880, 550), 0);
+        player1.create((levels.player[levels.crntLvl]), sf::Vector2f(120, 550), 1);
+        player2.create((levels.enemy[levels.crntLvl]), sf::Vector2f(880, 550), 0);
 
         //Ball
         ball.create();
@@ -692,7 +693,7 @@ struct Match
 
     // Logic
 
-    void SingleLogic()
+    void SingleLogic(char& screen)
     {
         // Collisions
         if (player1.ballCollision(ball.sprite, ball.velocity) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
@@ -735,9 +736,9 @@ struct Match
             timer--;
 
         //Levels iteration
-        if (Score1 > Score2&& end&& level < 4)
+        if (Score1 > Score2&& end&& levels.crntLvl < 4)
         {
-            LevelEnded = 1;
+            levels.LevelEnded = 1;
             levels.logic();
             create();
             player1.move();
@@ -747,6 +748,14 @@ struct Match
             timer = 3600;
             end = time_finished = 0;
 
+        }
+
+        //Returning to main menu after finshing all levels
+        if (levels.crntLvl == 4)
+        {
+            screen = 'h';
+            levels.crntLvl = 0;
+            create();
         }
     }
 
@@ -1284,7 +1293,7 @@ int main()
                 main.Logic(screen);
                 break;
             case 's':
-                Game.SingleLogic();
+                Game.SingleLogic(screen);
                 Game.PauseLogic(screen);
                 break;
             case 'm':
@@ -1323,13 +1332,6 @@ int main()
         case 'c': //Credits
             credits.render(window);
             break;
-        }
-        //Returning to main menu after finshing all levels
-        if (level == 4)
-        {
-            screen = 'h';
-            level = 0;
-            Game.create();
         }
 
         if (global.GamePaused) //Pause Menu to show above current screen
