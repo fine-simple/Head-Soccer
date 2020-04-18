@@ -547,6 +547,61 @@ struct Button
 
 };
 
+
+bool LevelEnded = 0;
+sf::String x[] = { "Data/Images/BossBabySheet.png",  "Data/Images/ButterSheet.png", "Data/Images/GumballSheet.png", "Data/Images/MegaSheet.png" };
+sf::String y[] = { "Data/Images/TimSheet.png", "Data/Images/MojoSheet.png", "Data/Images/RobSheet.png", "Data/Images/MetroSheet.png" };
+//creating levels, (Added by Mariam) 
+int level = 0;
+struct Levels
+{
+
+    //Level text
+    sf::Font font;
+    sf::Text text;
+
+    //Functions
+
+    void create()
+    {
+
+        font.loadFromFile("Data/Fonts/fontBtn.ttf");
+        text.setFont(font);
+        sf::String s = "Level " + std::to_string(level + 1);;
+        text.setString(s);
+        text.setCharacterSize(50);
+        text.setOrigin(text.getGlobalBounds().width / 2, text.getGlobalBounds().height / 2);
+        text.setPosition(screenWidth / 2, 50);
+        text.setFillColor(sf::Color::Black);
+        text.setStyle(sf::Text::Bold);
+
+
+    };
+
+
+    void logic()
+    {
+
+        if (level < 4)
+        {
+
+            if (LevelEnded)
+            {
+                level++;
+                LevelEnded = 0;
+            }
+        }
+    };
+
+
+    void render(sf::RenderWindow& window)
+    {
+        window.draw(text);
+    };
+}levels;
+
+
+
 /// Match Struct, contains the main game screen
 struct Match
 {
@@ -586,8 +641,8 @@ struct Match
     void create()
     {
         // Players
-        player1.create("Data/Images/MojoSheet.png", sf::Vector2f(120, 550), 1);
-        player2.create("Data/Images/MetroSheet.png", sf::Vector2f(880, 550), 0);
+        player1.create((x[level]), sf::Vector2f(120, 550), 1);
+        player2.create((y[level]), sf::Vector2f(880, 550), 0);
 
         //Ball
         ball.create();
@@ -630,6 +685,9 @@ struct Match
         winOrlose.setFont(global.BtnFont);
         winOrlose.setCharacterSize(60);
         winOrlose.setPosition(screenWidth / 2, screenHeight / 2);
+
+        //level text
+        levels.create();
     }
 
     // Logic
@@ -675,6 +733,21 @@ struct Match
 
         if (!time_finished)
             timer--;
+
+        //Levels iteration
+        if (Score1 > Score2&& end&& level < 4)
+        {
+            LevelEnded = 1;
+            levels.logic();
+            create();
+            player1.move();
+            ball.move();
+            Score1 = 0;
+            Score2 = 0;
+            timer = 3600;
+            end = time_finished = 0;
+
+        }
     }
 
     void MultiLogic()
@@ -737,11 +810,14 @@ struct Match
         player2.velocity = {};
         ball.velocity = {};
         end = timer = time_finished = 0;
+        Score1 = Score2 = 0;
+        timer = 3600;
     }
 
     // Rendering
     void render(sf::RenderWindow& window)
     {
+        levels.render(window);
         window.draw(ground);
         window.draw(ball.sprite);
         window.draw(player1.sprite);
@@ -1247,6 +1323,13 @@ int main()
         case 'c': //Credits
             credits.render(window);
             break;
+        }
+        //Returning to main menu after finshing all levels
+        if (level == 4)
+        {
+            screen = 'h';
+            level = 0;
+            Game.create();
         }
 
         if (global.GamePaused) //Pause Menu to show above current screen
