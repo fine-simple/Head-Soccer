@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <string>
-
+#include <iostream>
 //Constants
 #define screenWidth 1000
 #define screenHeight 650
@@ -553,7 +553,7 @@ struct Levels
     bool LevelEnded = 0;
     std::string player[4] = { "Data/Images/BossBabySheet.png",  "Data/Images/ButterSheet.png", "Data/Images/GumballSheet.png", "Data/Images/MegaSheet.png" };
     std::string enemy[4] = { "Data/Images/TimSheet.png", "Data/Images/MojoSheet.png", "Data/Images/RobSheet.png", "Data/Images/MetroSheet.png" };
-    int crntLvl = 3;
+    int crntLvl = 0;
     //Level text
     sf::Font font;
     sf::Text text;
@@ -562,11 +562,9 @@ struct Levels
 
     void create()
     {
-
         font.loadFromFile("Data/Fonts/fontBtn.ttf");
         text.setFont(font);
-        sf::String s = "Level " + std::to_string(crntLvl + 1);;
-        text.setString(s);
+        text.setString("Level " + std::to_string(crntLvl + 1));
         text.setCharacterSize(50);
         text.setOrigin(text.getGlobalBounds().width / 2, text.getGlobalBounds().height / 2);
         text.setPosition(screenWidth / 2, 50);
@@ -577,18 +575,20 @@ struct Levels
     };
 
 
-    void logic()
+    void nextlevel(char& screen)
     {
 
-        if (crntLvl < 4)
+        if (++crntLvl < 4)
         {
-
-            if (LevelEnded)
-            {
-                crntLvl++;
-                LevelEnded = 0;
-            }
+            LevelEnded = 0;
         }
+        else
+        {
+            crntLvl = 0;
+            screen = 'c';
+        }
+
+        text.setString("Level " + std::to_string(crntLvl + 1));
     };
 
 
@@ -599,27 +599,32 @@ struct Levels
 };
 
 
-
 /// Match Struct, contains the main game screen
 struct Match
 {
     //// VARIABLES ////
 
-        // Textures declaration
+    // Textures declaration
     sf::Texture gl;
 
     // Bodies declaration
-    sf::Sprite goal1, goal2;
-    sf::RectangleShape ground;
-    Object::Player player1, player2;
-    Object::Ball ball;
+
+    //Goals
+    sf::Sprite goal1, goal2; //Sprites
+    sf::FloatRect innerGoal1,innerGoal2; //Inner of Goal
+        
+    Object::Player player1, player2; //Players
+    
+    Object::Ball ball; //Ball
 
     // Sounds
     sf::SoundBuffer kickBallSoundbuff;
     sf::Sound kickBallSound;
+    
     sf::SoundBuffer GameEndSoundBuff;
     sf::Sound GameEndSound;
-
+    bool isGameEndSound=0;
+    
     // Buttons
     Button::Round pauseBtn;
 
@@ -630,9 +635,10 @@ struct Match
     sf::Text winOrlose;
 
     // Timer
-    int timer = 3600;
+    int timer = 60 * 60;
     sf::Text timer_cnt;
-    bool end = 0, time_finished = 0;
+    sf::Clock c1;
+    bool startedClock=0;
 
     //Levels
     Levels levels;
@@ -642,8 +648,8 @@ struct Match
     void create()
     {
         // Players
-        player1.create((levels.player[levels.crntLvl]), sf::Vector2f(120, 550), 1);
-        player2.create((levels.enemy[levels.crntLvl]), sf::Vector2f(880, 550), 0);
+        player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
+        player2.create((levels.enemy[levels.crntLvl]), {880, 550}, 0);
 
         //Ball
         ball.create();
@@ -653,17 +659,20 @@ struct Match
         goal1.setTexture(gl);
         goal1.setOrigin(sf::Vector2f(50, 90));
         goal1.setPosition(sf::Vector2f(20, 500));
-
+        innerGoal1 = sf::FloatRect(goal1.getGlobalBounds().left, goal1.getGlobalBounds().top + 10, goal1.getGlobalBounds().width, goal1.getGlobalBounds().height - 10);
+     
         goal2.setTexture(gl);
         goal2.setTextureRect(sf::IntRect(gl.getSize().x, 0, -1 * gl.getSize().x, gl.getSize().y));
         goal2.setOrigin(sf::Vector2f(50, 90));
         goal2.setPosition(sf::Vector2f(980, 500));
-
+        innerGoal2 = sf::FloatRect(goal2.getGlobalBounds().left, goal2.getGlobalBounds().top + 10, goal2.getGlobalBounds().width, goal2.getGlobalBounds().height - 10);
+     
         //Sounds
         kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
         kickBallSound.setBuffer(kickBallSoundbuff);
         GameEndSoundBuff.loadFromFile("Data/Sounds/gEnd.wav");
         GameEndSound.setBuffer(GameEndSoundBuff);
+        GameEndSound.setVolume(20.0f);
 
         //Pause Button
         pauseBtn.create("PauseButton");
@@ -683,6 +692,7 @@ struct Match
         timer_cnt.setCharacterSize(40);
         timer_cnt.setPosition(screenWidth / 15, 30);
 
+        //Match Result
         winOrlose.setFont(global.BtnFont);
         winOrlose.setCharacterSize(60);
         winOrlose.setPosition(screenWidth / 2, screenHeight / 2);
@@ -692,7 +702,6 @@ struct Match
     }
 
     // Logic
-
     void SingleLogic(char& screen)
     {
         // Collisions
@@ -702,64 +711,14 @@ struct Match
         ball.goalCollision(goal1);
         ball.goalCollision(goal2);
 
-        // Scoring
-        if (!(ball.sprite.getGlobalBounds().intersects(goal1.getGlobalBounds()) ||
-            ball.sprite.getGlobalBounds().intersects(goal2.getGlobalBounds())))
-            outside_goal = 1;
-        if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(goal1.getGlobalBounds()))
-            Score2++, inside_goal = 1, outside_goal = 0;
-        else if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(goal2.getGlobalBounds()))
-            Score1++, inside_goal = 1, outside_goal = 0;
-        else
-            inside_goal = 0;
-
-        // End of Game
-        if (timer <= 0)
-        {
-            if (Score1 != Score2 && !end)
-            {
-                GameEndSound.play();
-                end = 1;
-                ball.velocity = {};
-                player1.velocity = {};
-                player2.velocity = {};
-                winOrlose.setString(Score1 > Score2 ? "YOU WIN" : "YOU LOSE");
-            }
-            time_finished = 1;
-        }
-
         // Movement Control
         player1.move();
         ball.move();
 
-        if (!time_finished)
-            timer--;
-
-        //Levels iteration
-        if (Score1 > Score2&& end&& levels.crntLvl < 4)
-        {
-            levels.LevelEnded = 1;
-            levels.logic();
-            create();
-            player1.move();
-            ball.move();
-            Score1 = 0;
-            Score2 = 0;
-            timer = 3600;
-            end = time_finished = 0;
-
-        }
-
-        //Returning to main menu after finshing all levels
-        if (levels.crntLvl == 4)
-        {
-            screen = 'h';
-            levels.crntLvl = 0;
-            create();
-        }
+        scoring(screen);
     }
 
-    void MultiLogic()
+    void MultiLogic(char& screen)
     {
         // Collisions
         if ((player1.ballCollision(ball.sprite, ball.velocity) || player2.ballCollision(ball.sprite, ball.velocity)) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
@@ -768,39 +727,85 @@ struct Match
         ball.goalCollision(goal1);
         ball.goalCollision(goal2);
 
-        // Scoring
-        if (!(ball.sprite.getGlobalBounds().intersects(goal1.getGlobalBounds()) ||
-            ball.sprite.getGlobalBounds().intersects(goal2.getGlobalBounds())))
-            outside_goal = 1;
-        if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(goal1.getGlobalBounds()))
-            Score2++, inside_goal = 1, outside_goal = 0;
-        else if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(goal2.getGlobalBounds()))
-            Score1++, inside_goal = 1, outside_goal = 0;
-        else
-            inside_goal = 0;
-
         // Movement Control
         player1.move();
         player2.move();
         ball.move();
 
+        scoring(screen);
+    }
+
+    void scoring(char& screen)
+    {
+       // Scoring
+        if (!(ball.sprite.getGlobalBounds().intersects(innerGoal1) ||
+            ball.sprite.getGlobalBounds().intersects(innerGoal2)))
+            outside_goal = 1;
+        if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(innerGoal1) )
+            Score2++, inside_goal = 1, outside_goal = 0;
+        else if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(innerGoal2))
+            Score1++, inside_goal = 1, outside_goal = 0;
+        else
+            inside_goal = 0;
+
         // End of Game
         if (timer <= 0)
         {
-            if (Score1 != Score2 && !end)
+            if (Score1 != Score2)
             {
-                GameEndSound.play();
-                end = 1;
-                ball.velocity = {};
-                player1.velocity = {};
-                player2.velocity = {};
                 winOrlose.setString(Score1 > Score2 ? "YOU WIN" : "YOU LOSE");
-            }
-            time_finished = 1;
-        }
 
-        if (!time_finished)
-            timer--;
+                if(showResults())
+                {
+                    if(screen == 's') //if single player game ended
+                    {
+                        if(Score1 < Score2) //If Lost
+                        {
+                            screen = 'h'; //Go home
+                        }
+                        else               //if Won
+                        {
+                            levels.nextlevel(screen);  //Goto Next Level  
+                        }
+                        
+                    }
+                    else //if Multiplayer game ended
+                    {
+                        screen='h';
+                    }
+                    restart();
+                }
+                else
+                {
+                    if(!isGameEndSound)
+                    {
+                        if(global.soundEnabled)
+                            GameEndSound.play();
+                        isGameEndSound=1;
+                    }
+
+                    levels.LevelEnded=1;
+                }
+
+            }
+
+        }
+        else timer--;
+    }
+
+    bool showResults()
+    {
+        if(!startedClock)
+        {
+            startedClock=1;
+            c1.restart();
+        }
+        else if(c1.getElapsedTime() >= GameEndSoundBuff.getDuration())
+        {
+            return true;
+        }
+        return false;
+        
     }
 
     void PauseLogic(char& session)
@@ -811,42 +816,67 @@ struct Match
 
     void restart()
     {
-        player1.sprite.setPosition(120, 550);
-        player2.sprite.setPosition(880, 550);
+        player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
+        player2.create((levels.enemy[levels.crntLvl]), {880, 550} , 0);
         ball.sprite.setPosition(500, 100);
 
         player1.velocity = {};
         player2.velocity = {};
         ball.velocity = {};
-        end = timer = time_finished = 0;
-        Score1 = Score2 = 0;
-        timer = 3600;
+        Score1 = Score2 = isGameEndSound = startedClock = levels.LevelEnded = 0;
+        timer = 60 * 60;
     }
 
     // Rendering
-    void render(sf::RenderWindow& window)
+    void renderSingle(sf::RenderWindow& window)
     {
-        levels.render(window);
-        window.draw(ground);
-        window.draw(ball.sprite);
-        window.draw(player1.sprite);
-        window.draw(player2.sprite);
-        window.draw(goal1);
-        window.draw(goal2);
-        window.draw(pauseBtn.sprite);
-        score1.setString(std::to_string(Score1));
-        score2.setString(std::to_string(Score2));
-        window.draw(score1);
-        window.draw(score2);
-        timer_cnt.setString(std::to_string(timer / 60) + ":0" + std::to_string(timer >= 0 ? (timer / 6) % 10 : 9 - (-timer / 6) % 10));
-        window.draw(timer_cnt);
-        if (end)
+        if(!levels.LevelEnded)
         {
-            window.draw(global.background);
+            levels.render(window);
+            window.draw(ball.sprite);
+            window.draw(player1.sprite);
+            window.draw(player2.sprite);
+            window.draw(goal1);
+            window.draw(goal2);
+            window.draw(pauseBtn.sprite);
+            score1.setString(std::to_string(Score1));
+            score2.setString(std::to_string(Score2));
+            window.draw(score1);
+            window.draw(score2);
+            timer_cnt.setString(std::to_string(timer / 60) + ":0" + std::to_string(timer >= 0 ? (timer / 6) % 10 : 9 - (-timer / 6) % 10));
+            window.draw(timer_cnt);
+        }
+        else
+        {
             window.draw(winOrlose);
         }
 
     }
+
+    void renderMulti(sf::RenderWindow& window)
+    {
+        if(!levels.LevelEnded)
+        {
+            window.draw(ball.sprite);
+            window.draw(player1.sprite);
+            window.draw(player2.sprite);
+            window.draw(goal1);
+            window.draw(goal2);
+            window.draw(pauseBtn.sprite);
+            score1.setString(std::to_string(Score1));
+            score2.setString(std::to_string(Score2));
+            window.draw(score1);
+            window.draw(score2);
+            timer_cnt.setString(std::to_string(timer / 60) + ":0" + std::to_string(timer >= 0 ? (timer / 6) % 10 : 9 - (-timer / 6) % 10));
+            window.draw(timer_cnt);
+        }
+        else
+        {
+            window.draw(winOrlose);
+        }
+
+    }
+
 }Game;
 
 /// Menu Struct, contains all different menus of the game
@@ -859,7 +889,7 @@ struct Menu
 
         //Music
         sf::Music BGMusic;
-        bool isPlaying = 0;
+        bool MusicPlaying = 0;
 
         //Buttons
         static const int noOfBtns = 4;
@@ -889,10 +919,10 @@ struct Menu
         void Logic(char& session)
         {
             //Play Music
-            if (!isPlaying && global.soundEnabled)
+            if (!MusicPlaying && global.soundEnabled)
             {
                 BGMusic.play();
-                isPlaying = 1;
+                MusicPlaying = 1;
             }
 
             //Buttons Hovered or Clicked Actions
@@ -902,7 +932,7 @@ struct Menu
                 {
                     session = btnSession[i];
                     BGMusic.stop();
-                    isPlaying = 0;
+                    MusicPlaying = 0;
                 }
             }
         }
@@ -1114,6 +1144,7 @@ struct Menu
                     case 5: //Home
                         global.GamePaused = 0;
                         session = 'h';
+                        Game.restart();
                         break;
                     }
                 }
@@ -1297,7 +1328,7 @@ int main()
                 Game.PauseLogic(screen);
                 break;
             case 'm':
-                Game.MultiLogic();
+                Game.MultiLogic(screen);
                 Game.PauseLogic(screen);
                 break;
             case 'c':
@@ -1321,10 +1352,10 @@ int main()
             main.render(window);
             break;
         case 's': //Single Player
-            Game.render(window);
+            Game.renderSingle(window);
             break;
         case 'm': //Multiplayer
-            Game.render(window);
+            Game.renderMulti(window);
             break;
         case 'i': //Instructions
             instructions.render(window);
