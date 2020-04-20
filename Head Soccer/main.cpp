@@ -7,6 +7,7 @@
 #define screenWidth 1000
 #define screenHeight 650
 #define groundTop 590
+#define shadowThickness 5
 
 /// Global Struct, contains stuff that are used in more than one scope
 struct Global
@@ -119,6 +120,9 @@ struct Object
         sf::Sprite sprite;
         sf::Vector2f velocity;
 
+        //Shadow
+        sf::RectangleShape shadow;
+
         //Animation
         bool LPlyr = 1;
         int width = 0;
@@ -130,7 +134,10 @@ struct Object
 
         void create(std::string path, sf::Vector2f pos,bool LeftPlayer)
         {
+            //Setting if it's left or right player
             LPlyr = LeftPlayer;
+
+            //Body
             texture.loadFromFile(path);
             width = texture.getSize().x / 3;
             height = texture.getSize().y;
@@ -141,6 +148,14 @@ struct Object
                 sprite.setTextureRect(sf::IntRect((imgCnt + 1) * width, 0, -1 * width, height));
             sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
             sprite.setPosition(pos);
+            
+             //Shadow
+            shadow.setSize({sprite.getGlobalBounds().width, shadowThickness});
+            shadow.setFillColor(sf::Color(0,0,0, 125));
+            shadow.setOrigin(shadow.getSize().x / 2.0f, shadow.getSize().y / 2.0f);
+            shadow.setPosition(sprite.getPosition().x,groundTop + shadowThickness / 2.0f);
+
+            //Physics
             gravity.lostE = 0.9f;
             gravity.dv = 0.15f;
         }
@@ -179,6 +194,12 @@ struct Object
 
             //Movement Action
             sprite.move(velocity);
+
+            //Moving shadow with the player
+            shadow.setSize({sprite.getGlobalBounds().width * sprite.getPosition().y / screenHeight, shadowThickness}); // r = R * h/x , r = radius of shadow, R = maximum width of shadow, h total height = screenHeight, x = height of player
+            shadow.setOrigin(shadow.getSize().x / 2.0f, shadow.getSize().y / 2.0f);
+            shadow.setPosition(sprite.getPosition().x, groundTop + shadowThickness / 2.0f); //sync with player position in x and be under it in y
+
         }
         //Animtaion
 
@@ -319,6 +340,13 @@ struct Object
         {
             left = 0;
         }
+
+        ///Rendering
+        void render(sf::RenderWindow &window)
+        {
+            window.draw(sprite);
+            window.draw(shadow);
+        }
     };
 
     struct Ball
@@ -329,6 +357,9 @@ struct Object
         sf::Texture texture;
         sf::Sprite sprite;
 
+        //Shadow
+        sf::RectangleShape shadow;
+
         const float radius = 25;
         const float lostE = 0.25f;
         // Physics
@@ -337,15 +368,30 @@ struct Object
 
         void create()
         {
+            //Body
             texture.loadFromFile("Data/Images/ball.png");
             sprite.setTexture(texture);
             sprite.setOrigin(sf::Vector2f(25, 25));
             sprite.setPosition(sf::Vector2f(500, 100));
             sprite.setScale(0.80f, 0.80f);
+            
+            //Shadow
+            shadow.setSize({25, shadowThickness});
+            shadow.setFillColor(sf::Color(0,0,0, 125));
+            shadow.setOrigin(shadow.getSize().x / 2.0f, shadow.getSize().y / 2.0f);
+            shadow.setPosition(sprite.getPosition().x,groundTop + 5 / 2.0f);
+
+            //Physics Properties
             gravity.dv = 0.5;
             gravity.groundFr = 0.0f;
+            randV();
         }
 
+        void randV()
+        {
+            velocity = {rand() % 2? 2.0f : -2.0f, 0};
+        }
+        
         void move()
         {
             //Screen Boundries
@@ -360,10 +406,17 @@ struct Object
                 velocity.x = -velocity.x + velocity.x * lostE;
             }
 
+            //Activating Gravity
             gravity.activate(sprite, velocity);
 
+            //Moving Ball
             sprite.move(velocity);
             sprite.rotate(velocity.x);
+
+            //Moving shadow with the ball
+            shadow.setSize({30 * sprite.getPosition().y / screenHeight, shadowThickness}); // r = R * h/x , r = radius of shadow, R = maximum radius of shadow, h total height = screenHeight, x = height of ball
+            shadow.setOrigin(shadow.getSize().x / 2.0f, shadow.getSize().y / 2.0f);
+            shadow.setPosition(sprite.getPosition().x, groundTop + 5/2.0f); //sync with ball position in x and be under it in y
         }
 
         void goalCollision(sf::Sprite& body)
@@ -371,6 +424,12 @@ struct Object
             sf::FloatRect goalTop = { body.getGlobalBounds().left, body.getGlobalBounds().top, body.getGlobalBounds().width, 20 };
             if (goalTop.intersects(sprite.getGlobalBounds()))
                 velocity.y = -velocity.y + velocity.y * lostE;
+        }
+
+        void render(sf::RenderWindow &window)
+        {
+            window.draw(sprite);
+            window.draw(shadow);
         }
     };
 };
@@ -387,6 +446,7 @@ struct Button
         sf::Text title;
 
         bool inside = 0;
+        bool disabled=0;
 
         void create(sf::Vector2f pos, std::string x)
         {
@@ -423,29 +483,34 @@ struct Button
         void disabledTexture()
         {
             sprite.setTextureRect(sf::IntRect(static_cast<int>(size.x) * 2, 0, static_cast<int>(size.x), static_cast<int>(size.y)));
+            disabled=1;
         }
 
         //Checks if Mouse Hovered button
         bool mouseHover()
         {
-            if (sprite.getGlobalBounds().contains(global.mousePos))
+            if(!disabled)
             {
-                if (!inside)
+                if (sprite.getGlobalBounds().contains(global.mousePos))
                 {
-                    hoveredTexture();
-                    if (global.soundEnabled)
-                        global.btnHover.play();
-                    inside = 1;
+                    if (!inside)
+                    {
+                        hoveredTexture();
+                        if (global.soundEnabled)
+                            global.btnHover.play();
+                        inside = 1;
+                    }
+                    return true;
                 }
-                return true;
+                else
+                {
+                    if (inside)
+                        notHoveredTexture();
+                    inside = 0;
+                    return false;
+                }
             }
-            else
-            {
-                if (inside)
-                    notHoveredTexture();
-                inside = 0;
-                return false;
-            }
+            else return false;
         }
 
         //Checks if Mouse Pressed
@@ -570,10 +635,12 @@ struct Levels
         text.setPosition(screenWidth / 2, 50);
         text.setFillColor(sf::Color::Black);
         text.setStyle(sf::Text::Bold);
+    }
 
-
-    };
-
+    void setText()
+    {
+        text.setString("Level " + std::to_string(crntLvl + 1));
+    }
 
     void nextlevel(char& screen)
     {
@@ -588,14 +655,14 @@ struct Levels
             screen = 'c';
         }
 
-        text.setString("Level " + std::to_string(crntLvl + 1));
-    };
+        setText();
+    }
 
 
     void render(sf::RenderWindow& window)
     {
         window.draw(text);
-    };
+    }
 };
 
 
@@ -659,13 +726,13 @@ struct Match
         goal1.setTexture(gl);
         goal1.setOrigin(sf::Vector2f(50, 90));
         goal1.setPosition(sf::Vector2f(20, 500));
-        innerGoal1 = sf::FloatRect(goal1.getGlobalBounds().left, goal1.getGlobalBounds().top + 10, goal1.getGlobalBounds().width, goal1.getGlobalBounds().height - 10);
+        innerGoal1 = sf::FloatRect(goal1.getGlobalBounds().left, goal1.getGlobalBounds().top + 20, goal1.getGlobalBounds().width, goal1.getGlobalBounds().height - 20);
      
         goal2.setTexture(gl);
         goal2.setTextureRect(sf::IntRect(gl.getSize().x, 0, -1 * gl.getSize().x, gl.getSize().y));
         goal2.setOrigin(sf::Vector2f(50, 90));
         goal2.setPosition(sf::Vector2f(980, 500));
-        innerGoal2 = sf::FloatRect(goal2.getGlobalBounds().left, goal2.getGlobalBounds().top + 10, goal2.getGlobalBounds().width, goal2.getGlobalBounds().height - 10);
+        innerGoal2 = sf::FloatRect(goal2.getGlobalBounds().left, goal2.getGlobalBounds().top + 20, goal2.getGlobalBounds().width, goal2.getGlobalBounds().height - 20);
      
         //Sounds
         kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
@@ -737,14 +804,24 @@ struct Match
 
     void scoring(char& screen)
     {
-       // Scoring
+        // Scoring
         if (!(ball.sprite.getGlobalBounds().intersects(innerGoal1) ||
             ball.sprite.getGlobalBounds().intersects(innerGoal2)))
             outside_goal = 1;
         if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(innerGoal1) )
-            Score2++, inside_goal = 1, outside_goal = 0;
+        {
+            Score2++;
+            inside_goal = 1;
+            outside_goal = 0;
+            restart();
+        }
         else if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(innerGoal2))
-            Score1++, inside_goal = 1, outside_goal = 0;
+        {
+            Score1++;
+            inside_goal = 1;
+            outside_goal = 0;
+            restart();
+        }
         else
             inside_goal = 0;
 
@@ -773,7 +850,7 @@ struct Match
                     {
                         screen='h';
                     }
-                    restart();
+                    newLvl();
                 }
                 else
                 {
@@ -816,15 +893,33 @@ struct Match
 
     void restart()
     {
+        ball.sprite.setPosition(500, 100);
+        ball.randV();
+
+        player1.sprite.setPosition(120.0f, 550.0f);
+        player1.velocity = {};
+        
+        player2.sprite.setPosition(880.0f, 550.0f);
+        player2.velocity = {};
+        
+    }
+
+    void newLvl()
+    {
         player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
         player2.create((levels.enemy[levels.crntLvl]), {880, 550} , 0);
-        ball.sprite.setPosition(500, 100);
+        
+        restart();
 
-        player1.velocity = {};
-        player2.velocity = {};
-        ball.velocity = {};
         Score1 = Score2 = isGameEndSound = startedClock = levels.LevelEnded = 0;
         timer = 60 * 60;
+    }
+
+    void newGame()
+    {
+        newLvl();
+        levels.crntLvl=0;
+        levels.setText();
     }
 
     // Rendering
@@ -833,9 +928,9 @@ struct Match
         if(!levels.LevelEnded)
         {
             levels.render(window);
-            window.draw(ball.sprite);
-            window.draw(player1.sprite);
-            window.draw(player2.sprite);
+            ball.render(window);
+            player1.render(window);
+            player2.render(window);
             window.draw(goal1);
             window.draw(goal2);
             window.draw(pauseBtn.sprite);
@@ -857,9 +952,9 @@ struct Match
     {
         if(!levels.LevelEnded)
         {
-            window.draw(ball.sprite);
-            window.draw(player1.sprite);
-            window.draw(player2.sprite);
+            ball.render(window);
+            player1.render(window);
+            player2.render(window);
             window.draw(goal1);
             window.draw(goal2);
             window.draw(pauseBtn.sprite);
@@ -890,23 +985,44 @@ struct Menu
         //Music
         sf::Music BGMusic;
         bool MusicPlaying = 0;
+        
+        //Balls
+        Object::Ball ball[2];
 
         //Buttons
-        static const int noOfBtns = 4;
+        static const int noOfBtns = 5;
         Button::Rectangular btn[noOfBtns];
-        std::string btnTitle[noOfBtns] = { "SinglePlayer", "MultiPlayer", "Instructions", "Credits" };
-        char btnSession[noOfBtns] = { 's', 'm', 'i', 'c' };
+        std::string btnTitle[noOfBtns] = { "New Game", "Continue", "MultiPlayer", "Instructions", "Credits" };
+        char btnSession[noOfBtns] = { 's', 's', 'm', 'i', 'c' };
 
         /////////////////FUNCTIONS
 
         //Creating Objects
         void create()
         {
-            //Create Buttons : Divided spaces in screen into 8 Xs and 7 Ys to put buttons in order
-            for (char i = 0; i < 4; i++)
+            //Balls
+            for (int i = 0; i < 2; i++)
             {
-                btn[i].create(sf::Vector2f(screenWidth / 8 * 4, screenHeight / 6.5f * (i + 3)), btnTitle[i]);
+                //Loading Texture and Setting Postion
+                ball[i].create();
+                ball[i].sprite.setPosition(screenWidth / 1.5 * (i+0.25), screenHeight / 4 * 1.5);
+                
+                //Make Them bouncy balls
+                ball[i].velocity = {};
+                ball[i].gravity.lostE = 0;
+                ball[i].gravity.groundFr = 0;
             }
+            
+
+            //Create Buttons : Divided spaces in screen into 8 Xs and 7 Ys to put buttons in order
+            for (char i = 0; i < noOfBtns; i++)
+            {
+                btn[i].create(sf::Vector2f(screenWidth / 8 * 4, screenHeight / 6.5f * (i + 2)), btnTitle[i]);
+            }
+
+            //Disable Continue Button
+            btn[1].disabled=1;
+            btn[1].disabledTexture();
 
             //Load and Play Music
             BGMusic.openFromFile("Data/Sounds/MainMenu.wav");
@@ -933,8 +1049,22 @@ struct Menu
                     session = btnSession[i];
                     BGMusic.stop();
                     MusicPlaying = 0;
+
+                    if(i == 0)
+                    {
+                        Game.newGame();
+                        btn[1].disabled=0;
+                        btn[1].notHoveredTexture();
+                    }
                 }
             }
+
+            //Move Balls
+            for (int i = 0; i < 2; i++)
+            {
+                ball[i].move();
+            }
+            
         }
 
         //Rendering
@@ -944,6 +1074,12 @@ struct Menu
             {
                 btn[i].render(window);
             }
+
+            for (int i = 0; i < 2; i++)
+            {
+                ball[i].render(window);
+            }
+            
         }
     };
 
@@ -1144,7 +1280,6 @@ struct Menu
                     case 5: //Home
                         global.GamePaused = 0;
                         session = 'h';
-                        Game.restart();
                         break;
                     }
                 }
@@ -1196,6 +1331,8 @@ int main()
         i(instructions)
         p(Pause)
     */
+
+    srand(time(NULL)); //Seeding random number
 
     //Creating window
     sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Head Soccer", sf::Style::Close | sf::Style::Titlebar);
