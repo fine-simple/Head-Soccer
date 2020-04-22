@@ -18,9 +18,6 @@ struct Global
     //if Game is Paused
     bool GamePaused = 0;
 
-    //if to return from Instructions to Game
-    bool gotoPauseMenu = 0;
-
     sf::Vector2f mousePos; //to save current mouse position
 
     //Sounds
@@ -384,7 +381,7 @@ struct Object
             //Physics Properties
             gravity.dv = 0.5;
             gravity.groundFr = 0.0f;
-            randV();
+            // randV();
         }
 
         void randV()
@@ -683,13 +680,15 @@ struct Match
         int Score1 = 0, Score2 = 0;
         bool inside_goal = 0, outside_goal = 0;
         bool EndGame=0;
+        
         //Timer
-        int timer = 60 * 60;
+        int timer;
 
         void restart()
         {
             ball.sprite.setPosition(500, 100);
-            ball.randV();
+            ball.velocity = {};
+            // ball.randV();
 
             player1.sprite.setPosition(120.0f, 550.0f);
             player1.velocity = {};
@@ -735,6 +734,9 @@ struct Match
 
     // Levels
     Levels levels;
+
+    //Instructions Menu Cancel Button Action
+    char crntMode;  //h for home, s for single player, m for multiplayer
 
     //// FUNCTIONS ////
 
@@ -788,7 +790,9 @@ struct Match
         timer_cnt.setFont(global.BtnFont);
         timer_cnt.setCharacterSize(40);
         timer_cnt.setPosition(screenWidth / 15, 30);
-
+        single.timer = resetTimer();
+        multi.timer = resetTimer();
+        
         //Match Result
         winOrlose.setFont(global.BtnFont);
         winOrlose.setCharacterSize(60);
@@ -890,7 +894,7 @@ struct Match
         single.restart();
 
         single.Score1 = single.Score2 = single.isGameEndSound = startedClock = single.EndGame = 0;
-        single.timer = 60 * 60;
+        single.timer = resetTimer();
     }
 
     void newGame()
@@ -976,13 +980,13 @@ struct Match
 
     void newLvlMulti()
     {
-        single.player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
-        single.player2.create((levels.enemy[levels.crntLvl]), {880, 550} , 0);
+        multi.player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
+        multi.player2.create((levels.enemy[levels.crntLvl]), {880, 550} , 0);
         
-        single.restart();
+        multi.restart();
 
-        single.Score1 = single.Score2 = single.isGameEndSound = startedClock = single.EndGame = 0;
-        single.timer = 60 * 60;
+        multi.Score1 = multi.Score2 = multi.isGameEndSound = startedClock = multi.EndGame = 0;
+        multi.timer = resetTimer();
     }
 
     //Common Logic
@@ -1006,7 +1010,12 @@ struct Match
         if (pauseBtn.mouseLeftClicked())
             global.GamePaused = 1;
     }
-
+    
+    int resetTimer()
+    {
+        return 60 * 60;
+    }
+    
     // Rendering
 
     //SinglePlayer
@@ -1132,11 +1141,13 @@ struct Menu
                     BGMusic.stop();
                     MusicPlaying = 0;
 
-                    if(i == 0)
+                    switch (i)
                     {
+                    case 0:
                         Game.newGame();
                         btn[1].disabled=0;
                         btn[1].notHoveredTexture();
+                        break;
                     }
                 }
             }
@@ -1249,16 +1260,22 @@ struct Menu
         {
             if (returnBtn.mouseLeftClicked())
             {
-                if (global.gotoPauseMenu)
+                if (Game.crntMode == 's')
                 {
                     global.GamePaused = 1;
                     session = 's';
-                    global.gotoPauseMenu = 0;
                 }
-                else
+                else if(Game.crntMode == 'm')
                 {
+                    global.GamePaused = 1;
+                    session = 'm';
+                }
+                else if (Game.crntMode == 'h')
+                {
+                    global.GamePaused=0;
                     session = 'h';
                 }
+                
             }
         }
 
@@ -1340,12 +1357,11 @@ struct Menu
                     {
                     case 1: //Restart
                         if(session == 's')
-                            Game.single.restart();
-                        else
-                            Game.multi.restart();
+                            Game.newLvlSingle();
+                        else if(session == 'm')
+                            Game.newLvlMulti();
                     case 0: //Cancel
                         global.GamePaused = 0;
-                        session = 's';
                         break;
                     case 2: //Mute
                         global.soundEnabled = 0;
@@ -1358,12 +1374,13 @@ struct Menu
                         btn[3].sprite.setScale(0, 0);
                         break;
                     case 4: //Instructions
-                        global.gotoPauseMenu = 1;
                         global.GamePaused = 0;
+                        Game.crntMode = session;
                         session = 'i';
                         break;
                     case 5: //Home
                         global.GamePaused = 0;
+                        Game.crntMode='h';
                         session = 'h';
                         break;
                     }
@@ -1404,6 +1421,14 @@ void loadScreen(sf::RenderWindow& window)
 
 int main()
 {
+    //Creating window
+    sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Head Soccer", sf::Style::Close | sf::Style::Titlebar);
+    window.setFramerateLimit(60);
+    window.setMouseCursorVisible(false);
+
+    //Loading Screen till Resources Loads
+    loadScreen(window);
+
     //variables
     char screen = 'h'; // to know which screen to render and handle
 
@@ -1414,18 +1439,7 @@ int main()
         c(Credits)
         m(Multiplayer)
         i(instructions)
-        p(Pause)
     */
-
-    srand(time(NULL)); //Seeding random number
-
-    //Creating window
-    sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Head Soccer", sf::Style::Close | sf::Style::Titlebar);
-    window.setFramerateLimit(60);
-    window.setMouseCursorVisible(false);
-
-    //Loading Screen till Resources Loads
-    loadScreen(window);
 
     //Global Objects
     global.create();
