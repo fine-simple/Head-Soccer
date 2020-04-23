@@ -849,7 +849,7 @@ struct Match
         {
             if (single.Score1 != single.Score2)
             {
-                winOrlose.setString(single.Score1 > single.Score2 ? "YOU WIN" : "YOU LOSE");
+                winOrlose.setString(single.Score1 > single.Score2 ? "You Won" : "You Lost");
 
                 if(showResults())
                 {
@@ -899,8 +899,8 @@ struct Match
 
     void newGame()
     {
-        newLvlSingle();
         levels.crntLvl=0;
+        newLvlSingle();
         levels.setText();
     }
 
@@ -950,7 +950,7 @@ struct Match
         {
             if (multi.Score1 != multi.Score2)
             {
-                winOrlose.setString(multi.Score1 > multi.Score2 ? "YOU WIN" : "YOU LOSE");
+                winOrlose.setString(multi.Score1 > multi.Score2 ? "Left Player Won" : "Right Player Won");
 
                 if(showResults())
                 {
@@ -1269,7 +1269,7 @@ struct Menu
                     global.GamePaused = 1;
                     session = 'm';
                 }
-                else if (crntMode == 'h')
+                else
                 {
                     global.GamePaused=0;
                     session = 'h';
