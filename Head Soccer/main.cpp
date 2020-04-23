@@ -1096,7 +1096,7 @@ struct Menu
             {
                 //Loading Texture and Setting Postion
                 ball[i].create();
-                ball[i].sprite.setPosition(screenWidth / 1.5 * (i+0.25), screenHeight / 4 * 1.5);
+                ball[i].sprite.setPosition(screenWidth / 1.5f * (i+0.25f), screenHeight / 4 * 1.5f);
                 
                 //Make Them bouncy balls
                 ball[i].velocity = {};
