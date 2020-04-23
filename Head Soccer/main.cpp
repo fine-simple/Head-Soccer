@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <string>
+#include <fstream>
 #include <iostream>
 //Constants
 #define screenWidth 1000
@@ -661,7 +662,6 @@ struct Levels
     }
 };
 
-
 /// Match Struct, contains the main game screen
 struct Match
 {
@@ -1063,7 +1063,7 @@ struct Match
 
     }
 
-}Game;
+};
 
 /// Menu Struct, contains all different menus of the game
 struct Menu
@@ -1112,7 +1112,6 @@ struct Menu
             }
 
             //Disable Continue Button
-            btn[1].disabled=1;
             btn[1].disabledTexture();
 
             //Load and Play Music
@@ -1123,7 +1122,7 @@ struct Menu
         //Logic
 
         //When mouse hovers over buttons
-        void Logic(char& session)
+        void Logic(char& session,Match& Game)
         {
             //Play Music
             if (!MusicPlaying && global.soundEnabled)
@@ -1256,21 +1255,21 @@ struct Menu
         }
 
         //Button Logic
-        void Logic(char& session)
+        void Logic(char& session,char& crntMode)
         {
             if (returnBtn.mouseLeftClicked())
             {
-                if (Game.crntMode == 's')
+                if (crntMode == 's')
                 {
                     global.GamePaused = 1;
                     session = 's';
                 }
-                else if(Game.crntMode == 'm')
+                else if(crntMode == 'm')
                 {
                     global.GamePaused = 1;
                     session = 'm';
                 }
-                else if (Game.crntMode == 'h')
+                else if (crntMode == 'h')
                 {
                     global.GamePaused=0;
                     session = 'h';
@@ -1292,7 +1291,7 @@ struct Menu
     struct Pause
     {
         // VARIABLES
-        static const int n = 6;
+        static const int n = 5;
         Button::Round btn[n];
 
         //Background for Buttons
@@ -1304,6 +1303,9 @@ struct Menu
 
         //Title
         sf::Text paused;
+
+        //Mute Button Texture
+        sf::Texture unmuteTex;
 
         // FUNCTIONS
         void create()
@@ -1319,11 +1321,10 @@ struct Menu
             Blur.setSize(sf::Vector2f(screenWidth, screenHeight));
             Blur.setFillColor(sf::Color(220, 220, 220, 80));
 
-
             // Buttons
-
-            // 1-resume 2-restart 3-mute 4-unmute 5-instructions 6-main menu
-            sf::String s[] = { "Cancel","Restart","Mute", "Unmute","Inst","Home" };
+            
+            // 1-resume 2-restart 3-mute 5-instructions 6-main menu
+            sf::String s[] = { "Cancel","Restart","Mute", "Inst","Home" };
             for (int i = 0; i < n; i++)
             {
                 btn[i].create(s[i]);
@@ -1332,10 +1333,9 @@ struct Menu
             btn[0].sprite.setPosition(bgT.getSize().x + bgT.getSize().x / 4.0f - 20.0f, bgT.getSize().y - bgT.getSize().y / 4.0f + 20.0f); //Cancel Button
             btn[1].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 - 70); //Restart Button
             btn[2].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70); //Mute Button
-            btn[3].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 - 70); //Unmute Button
-            btn[3].sprite.setScale(0, 0);
-            btn[4].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70); //Instructions Button
-            btn[5].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70); //Home Button
+            unmuteTex.loadFromFile("Data/Images/Unmute.png");
+            btn[3].sprite.setPosition(screenWidth / 2 - 160 + 70, screenHeight / 2 + 70); //Instructions Button
+            btn[4].sprite.setPosition(screenWidth / 2 + 160 - 70, screenHeight / 2 + 70); //Home Button
 
             //Text
 
@@ -1347,7 +1347,7 @@ struct Menu
             paused.setPosition(screenWidth / 2, screenHeight / 2 - 180);
         }
 
-        void Logic(char& session)
+        void Logic(char& session,Match& Game)
         {
             for (int i = 0; i < n; i++)
             {
@@ -1364,21 +1364,23 @@ struct Menu
                         global.GamePaused = 0;
                         break;
                     case 2: //Mute
-                        global.soundEnabled = 0;
-                        btn[2].sprite.setScale(0, 0);
-                        btn[3].sprite.setScale(0.4f, 0.4f);
+                        if(global.soundEnabled)
+                        {
+                            global.soundEnabled = 0;
+                            btn[2].sprite.setTexture(unmuteTex);
+                        }
+                        else
+                        {
+                            global.soundEnabled = 1;
+                            btn[2].sprite.setTexture(btn[2].Tex);
+                        }
                         break;
-                    case 3: //Unmute
-                        global.soundEnabled = 1;
-                        btn[2].sprite.setScale(0.4f, 0.4f);
-                        btn[3].sprite.setScale(0, 0);
-                        break;
-                    case 4: //Instructions
+                    case 3: //Instructions
                         global.GamePaused = 0;
                         Game.crntMode = session;
                         session = 'i';
                         break;
-                    case 5: //Home
+                    case 4: //Home
                         global.GamePaused = 0;
                         Game.crntMode='h';
                         session = 'h';
@@ -1417,6 +1419,124 @@ void loadScreen(sf::RenderWindow& window)
     window.clear(sf::Color::Black);
     window.draw(title);
     window.display();
+}
+
+void saveData(bool ContinueBtn, //Main  Menu Continue Button Disable State
+            int crntLevel, //Single Player current achieved level
+            sf::Vector2f SingleP1, sf::Vector2f SingleP1V, sf::Vector2f SingleP2, sf::Vector2f SingleP2V, sf::Vector2f ballS, sf::Vector2f ballSV, int SingleS1, int SingleS2, //Single Player Variables
+            sf::Vector2f MultiP1, sf::Vector2f MultiP1V, sf::Vector2f MultiP2, sf::Vector2f MultiP2V, sf::Vector2f ballM, sf::Vector2f ballMV, int MultiS1, int MultiS2) //MultiPlayer Variables
+{
+    std::ofstream file;
+
+    file.open("Data/save", std::ios_base::trunc);
+
+    if(!file.good())
+    {
+        file.close();
+        std::cout << "Error Saving Data\n";
+        return;
+    }
+    //State Of Sound
+    file << global.soundEnabled << '\n';
+
+    //State Of Continue Btn in Main Menu
+    file << ContinueBtn << '\n';
+
+    //Current Achieved Level
+    file << crntLevel << '\n';
+
+    //Coordinates of players, ball and their scores in SinglePlayer
+    file << SingleP1.x << ' ' << SingleP1.y << '\n';
+    file << SingleP1V.x << ' ' << SingleP1V.y << '\n';
+    
+    file << SingleP2.x << ' ' << SingleP2.y << '\n';
+    file << SingleP2V.x << ' ' << SingleP2V.y << '\n';
+    
+    file << ballS.x << ' ' << ballS.y << '\n';
+    file << ballSV.x << ' ' << ballSV.y << '\n';
+    
+    file << SingleS1 << ' ' << SingleS2 << '\n';
+
+    //Coordinates of players, ball and their scores in MultiPlayer
+    file << MultiP1.x << ' ' << MultiP1.y << '\n';
+    file << MultiP1V.x << ' ' << MultiP1V.y << '\n';
+
+    file << MultiP2.x << ' ' << MultiP2.y << '\n';
+    file << MultiP2V.x << ' ' << MultiP2V.y << '\n';
+    
+    file << ballM.x << ' ' << ballM.y << '\n';
+    file << ballMV.x << ' ' << ballMV.y << '\n';
+    
+    file << MultiS1 << ' ' << MultiS2 << '\n';
+    
+    file.close();
+}
+
+void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, //Sound
+            bool& disabledContinue, Button::Rectangular& Continue, //Main Menu Continue Button
+            int& crntLevel, //Current Level
+            sf::Sprite& SingleP1, sf::Vector2f& SingleP1V, sf::Sprite& SingleP2, sf::Vector2f& SingleP2V, sf::Sprite& ballS, sf::Vector2f& ballSV, int& SingleS1, int& SingleS2, //Single Player
+            sf::Sprite& MultiP1, sf::Vector2f& MultiP1V, sf::Sprite& MultiP2, sf::Vector2f& MultiP2V, sf::Sprite& ballM, sf::Vector2f& ballMV, int& MultiS1, int& MultiS2) //MutliPlayer
+{
+    std::ifstream file;
+
+    file.open("Data/save");
+
+    if(!file.good())
+    {
+        std::cout << "Error Loading Data\n";
+        file.close();
+        return;
+    }
+    
+    //Restore Data
+
+    //State Of Sounds
+    file >> global.soundEnabled;
+    if(!global.soundEnabled)
+        muteBtn.setTexture(unmuteTex);
+
+    //State of Continue Button in Main Menu
+    file >> disabledContinue;
+    if(!disabledContinue)
+        Continue.notHoveredTexture();
+
+    //last Achieved Level
+    file >> crntLevel;
+
+    sf::Vector2f temp; //Temporary Variables to store positions
+    
+    //SinglePlayer
+    file >> temp.x >> temp.y;
+    SingleP1.setPosition(temp);
+    file >> SingleP1V.x >> SingleP1V.y;
+
+    file >> temp.x >> temp.y;
+    SingleP2.setPosition(temp);
+    file >> SingleP2V.x >> SingleP2V.y;
+
+    file >> temp.x >> temp.y;
+    ballS.setPosition(temp);
+    file >> ballSV.x >> ballSV.y;
+
+    file >> SingleS1 >> SingleS2;
+    
+    //MultiPlayer
+    file >> temp.x >> temp.y;
+    MultiP1.setPosition(temp);
+    file >> MultiP1V.x >> MultiP1V.y;
+
+    file >> temp.x >> temp.y;
+    MultiP2.setPosition(temp);
+    file >> MultiP2V.x >> MultiP2V.y;
+    
+    file >> temp.x >> temp.y;
+    ballM.setPosition(temp);
+    file >> ballMV.x >> ballMV.y;
+    
+    file >> MultiS1 >> MultiS2;
+
+    file.close();
 }
 
 int main()
@@ -1461,8 +1581,24 @@ int main()
     pause.create();
 
     //Single Player Session
+    Match Game;
     Game.create();
 
+    //Load Data Saved Form File
+    loadData(pause.btn[2].sprite, pause.unmuteTex, //Pause Menu Mute Button
+            main.btn[1].disabled, main.btn[1], //Main Menu Continue Button
+            //SinglePlayer
+            Game.levels.crntLvl, //Current Level
+            Game.single.player1.sprite, Game.single.player1.velocity, //Player1 Position and Velocity
+            Game.single.player2.sprite, Game.single.player2.velocity, //Player2 Position and Velocity
+            Game.single.ball.sprite, Game.single.ball.velocity, //Ball Position and Velocity
+            Game.single.Score1, Game.single.Score2, //Scores
+            //MultiPlayer
+            Game.multi.player1.sprite, Game.multi.player1.velocity, //Player1 Position and Velocity
+            Game.multi.player2.sprite, Game.multi.player2.velocity, //Player2 Position and Velocity
+            Game.multi.ball.sprite, Game.multi.ball.velocity, //Ball Position and Velocity
+            Game.multi.Score1, Game.multi.Score2); //Scores
+        
     //Game Loop
     while (window.isOpen())
     {
@@ -1474,6 +1610,19 @@ int main()
             {
                 //Window Events
             case sf::Event::Closed:
+                saveData(main.btn[1].disabled,  //Main Menu
+                    //SinglePlayer
+                    Game.levels.crntLvl, //Current Level
+                    Game.single.player1.sprite.getPosition(), Game.single.player1.velocity, //Player1 Position and Velocity
+                    Game.single.player2.sprite.getPosition(), Game.single.player2.velocity, //Player2 Position and Velocity
+                    Game.single.ball.sprite.getPosition(), Game.single.ball.velocity, //Ball Position and Velocity
+                    Game.single.Score1, Game.single.Score2, //Scores
+                    //MultiPlayer
+                    Game.multi.player1.sprite.getPosition(), Game.multi.player1.velocity, //Player1 Position and Velocity
+                    Game.multi.player2.sprite.getPosition(), Game.multi.player2.velocity, //Player2 Position and Velocity
+                    Game.multi.ball.sprite.getPosition(), Game.multi.ball.velocity, //Ball Position and Velocity
+                    Game.multi.Score1, Game.multi.Score2); //Scores
+        
                 window.close();
                 break;
             case sf::Event::LostFocus:
@@ -1595,7 +1744,7 @@ int main()
             switch (screen)
             {
             case 'h':
-                main.Logic(screen);
+                main.Logic(screen, Game);
                 break;
             case 's':
                 Game.SingleLogic(screen);
@@ -1609,10 +1758,10 @@ int main()
                 credits.Logic(screen);
                 break;
             case 'i':
-                instructions.Logic(screen);
+                instructions.Logic(screen, Game.crntMode);
                 break;
             }
-        else pause.Logic(screen);
+        else pause.Logic(screen, Game);
 
         global.Logic();
 
