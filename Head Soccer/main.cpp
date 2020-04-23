@@ -859,7 +859,7 @@ struct Match
                     }
                     else               //if Won
                     {
-                        levels.nextlevel(screen, single.EndGame);  //Goto Next Level  
+                        levels.nextlevel(screen, single.EndGame);  //Goto Next Level
                     } 
                     newLvlSingle();
                 }
@@ -1421,10 +1421,7 @@ void loadScreen(sf::RenderWindow& window)
     window.display();
 }
 
-void saveData(bool ContinueBtn, //Main  Menu Continue Button Disable State
-            int crntLevel, //Single Player current achieved level
-            sf::Vector2f SingleP1, sf::Vector2f SingleP1V, sf::Vector2f SingleP2, sf::Vector2f SingleP2V, sf::Vector2f ballS, sf::Vector2f ballSV, int SingleS1, int SingleS2, //Single Player Variables
-            sf::Vector2f MultiP1, sf::Vector2f MultiP1V, sf::Vector2f MultiP2, sf::Vector2f MultiP2V, sf::Vector2f ballM, sf::Vector2f ballMV, int MultiS1, int MultiS2) //MultiPlayer Variables
+void saveData(bool ContinueBtn, Match& Game)
 {
     std::ofstream file;
 
@@ -1436,6 +1433,7 @@ void saveData(bool ContinueBtn, //Main  Menu Continue Button Disable State
         std::cout << "Error Saving Data\n";
         return;
     }
+
     //State Of Sound
     file << global.soundEnabled << '\n';
 
@@ -1443,40 +1441,38 @@ void saveData(bool ContinueBtn, //Main  Menu Continue Button Disable State
     file << ContinueBtn << '\n';
 
     //Current Achieved Level
-    file << crntLevel << '\n';
+    file << Game.levels.crntLvl << '\n';
 
     //Coordinates of players, ball and their scores in SinglePlayer
-    file << SingleP1.x << ' ' << SingleP1.y << '\n';
-    file << SingleP1V.x << ' ' << SingleP1V.y << '\n';
+    file << Game.single.player1.sprite.getPosition().x << ' ' << Game.single.player1.sprite.getPosition().y << '\n';
+    file << Game.single.player1.velocity.x << ' ' << Game.single.player1.velocity.y << '\n';
     
-    file << SingleP2.x << ' ' << SingleP2.y << '\n';
-    file << SingleP2V.x << ' ' << SingleP2V.y << '\n';
+    file << Game.single.player2.sprite.getPosition().x << ' ' << Game.single.player2.sprite.getPosition().y << '\n';
+    file << Game.single.player2.velocity.x << ' ' << Game.single.player2.velocity.y << '\n';
     
-    file << ballS.x << ' ' << ballS.y << '\n';
-    file << ballSV.x << ' ' << ballSV.y << '\n';
+    file << Game.single.ball.sprite.getPosition().x << ' ' << Game.single.ball.sprite.getPosition().y << '\n';
+    file << Game.single.ball.velocity.x << ' ' << Game.single.ball.velocity.y << '\n';
     
-    file << SingleS1 << ' ' << SingleS2 << '\n';
+    file << Game.single.Score1 << ' ' << Game.single.Score2 << '\n';
+    file << Game.single.timer << '\n';
 
     //Coordinates of players, ball and their scores in MultiPlayer
-    file << MultiP1.x << ' ' << MultiP1.y << '\n';
-    file << MultiP1V.x << ' ' << MultiP1V.y << '\n';
+    file << Game.multi.player1.sprite.getPosition().x << ' ' << Game.multi.player1.sprite.getPosition().y << '\n';
+    file << Game.multi.player1.velocity.x << ' ' << Game.multi.player1.velocity.y << '\n';
+    
+    file << Game.multi.player2.sprite.getPosition().x << ' ' << Game.multi.player2.sprite.getPosition().y << '\n';
+    file << Game.multi.player2.velocity.x << ' ' << Game.multi.player2.velocity.y << '\n';
+    
+    file << Game.multi.ball.sprite.getPosition().x << ' ' << Game.multi.ball.sprite.getPosition().y << '\n';
+    file << Game.multi.ball.velocity.x << ' ' << Game.multi.ball.velocity.y << '\n';
+    
+    file << Game.multi.Score1 << ' ' << Game.multi.Score2 << '\n';
+    file << Game.multi.timer;
 
-    file << MultiP2.x << ' ' << MultiP2.y << '\n';
-    file << MultiP2V.x << ' ' << MultiP2V.y << '\n';
-    
-    file << ballM.x << ' ' << ballM.y << '\n';
-    file << ballMV.x << ' ' << ballMV.y << '\n';
-    
-    file << MultiS1 << ' ' << MultiS2 << '\n';
-    
     file.close();
 }
 
-void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, //Sound
-            bool& disabledContinue, Button::Rectangular& Continue, //Main Menu Continue Button
-            int& crntLevel, //Current Level
-            sf::Sprite& SingleP1, sf::Vector2f& SingleP1V, sf::Sprite& SingleP2, sf::Vector2f& SingleP2V, sf::Sprite& ballS, sf::Vector2f& ballSV, int& SingleS1, int& SingleS2, //Single Player
-            sf::Sprite& MultiP1, sf::Vector2f& MultiP1V, sf::Sprite& MultiP2, sf::Vector2f& MultiP2V, sf::Sprite& ballM, sf::Vector2f& ballMV, int& MultiS1, int& MultiS2) //MutliPlayer
+void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, bool& disabledContinue, Button::Rectangular& Continue, Match& Game)
 {
     std::ifstream file;
 
@@ -1502,39 +1498,43 @@ void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, //Sound
         Continue.notHoveredTexture();
 
     //last Achieved Level
-    file >> crntLevel;
+    file >> Game.levels.crntLvl;
+    Game.levels.setText();
+    Game.newLvlSingle();
 
     sf::Vector2f temp; //Temporary Variables to store positions
     
     //SinglePlayer
     file >> temp.x >> temp.y;
-    SingleP1.setPosition(temp);
-    file >> SingleP1V.x >> SingleP1V.y;
+    Game.single.player1.sprite.setPosition(temp);
+    file >> Game.single.player1.velocity.x >> Game.single.player1.velocity.y;
 
     file >> temp.x >> temp.y;
-    SingleP2.setPosition(temp);
-    file >> SingleP2V.x >> SingleP2V.y;
+    Game.single.player2.sprite.setPosition(temp);
+    file >> Game.single.player2.velocity.x >> Game.single.player2.velocity.y;
 
     file >> temp.x >> temp.y;
-    ballS.setPosition(temp);
-    file >> ballSV.x >> ballSV.y;
+    Game.single.ball.sprite.setPosition(temp);
+    file >> Game.single.ball.velocity.x >> Game.single.ball.velocity.y;
 
-    file >> SingleS1 >> SingleS2;
-    
+    file >> Game.single.Score1 >> Game.single.Score2;
+    file >> Game.single.timer;
+
     //MultiPlayer
     file >> temp.x >> temp.y;
-    MultiP1.setPosition(temp);
-    file >> MultiP1V.x >> MultiP1V.y;
+    Game.multi.player1.sprite.setPosition(temp);
+    file >> Game.multi.player1.velocity.x >> Game.multi.player1.velocity.y;
 
     file >> temp.x >> temp.y;
-    MultiP2.setPosition(temp);
-    file >> MultiP2V.x >> MultiP2V.y;
-    
+    Game.multi.player2.sprite.setPosition(temp);
+    file >> Game.multi.player2.velocity.x >> Game.multi.player2.velocity.y;
+
     file >> temp.x >> temp.y;
-    ballM.setPosition(temp);
-    file >> ballMV.x >> ballMV.y;
-    
-    file >> MultiS1 >> MultiS2;
+    Game.multi.ball.sprite.setPosition(temp);
+    file >> Game.multi.ball.velocity.x >> Game.multi.ball.velocity.y;
+
+    file >> Game.multi.Score1 >> Game.multi.Score2;
+    file >> Game.multi.timer;
 
     file.close();
 }
@@ -1585,20 +1585,8 @@ int main()
     Game.create();
 
     //Load Data Saved Form File
-    loadData(pause.btn[2].sprite, pause.unmuteTex, //Pause Menu Mute Button
-            main.btn[1].disabled, main.btn[1], //Main Menu Continue Button
-            //SinglePlayer
-            Game.levels.crntLvl, //Current Level
-            Game.single.player1.sprite, Game.single.player1.velocity, //Player1 Position and Velocity
-            Game.single.player2.sprite, Game.single.player2.velocity, //Player2 Position and Velocity
-            Game.single.ball.sprite, Game.single.ball.velocity, //Ball Position and Velocity
-            Game.single.Score1, Game.single.Score2, //Scores
-            //MultiPlayer
-            Game.multi.player1.sprite, Game.multi.player1.velocity, //Player1 Position and Velocity
-            Game.multi.player2.sprite, Game.multi.player2.velocity, //Player2 Position and Velocity
-            Game.multi.ball.sprite, Game.multi.ball.velocity, //Ball Position and Velocity
-            Game.multi.Score1, Game.multi.Score2); //Scores
-        
+    loadData(pause.btn[2].sprite, pause.unmuteTex, main.btn[1].disabled, main.btn[1], Game);
+    
     //Game Loop
     while (window.isOpen())
     {
@@ -1610,19 +1598,7 @@ int main()
             {
                 //Window Events
             case sf::Event::Closed:
-                saveData(main.btn[1].disabled,  //Main Menu
-                    //SinglePlayer
-                    Game.levels.crntLvl, //Current Level
-                    Game.single.player1.sprite.getPosition(), Game.single.player1.velocity, //Player1 Position and Velocity
-                    Game.single.player2.sprite.getPosition(), Game.single.player2.velocity, //Player2 Position and Velocity
-                    Game.single.ball.sprite.getPosition(), Game.single.ball.velocity, //Ball Position and Velocity
-                    Game.single.Score1, Game.single.Score2, //Scores
-                    //MultiPlayer
-                    Game.multi.player1.sprite.getPosition(), Game.multi.player1.velocity, //Player1 Position and Velocity
-                    Game.multi.player2.sprite.getPosition(), Game.multi.player2.velocity, //Player2 Position and Velocity
-                    Game.multi.ball.sprite.getPosition(), Game.multi.ball.velocity, //Ball Position and Velocity
-                    Game.multi.Score1, Game.multi.Score2); //Scores
-        
+                saveData(main.btn[1].disabled, Game);
                 window.close();
                 break;
             case sf::Event::LostFocus:
