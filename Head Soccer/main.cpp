@@ -1072,6 +1072,10 @@ struct Menu
     struct Main
     {
         /////////////////VARIABLES
+        
+        //Logo
+        sf::Texture logoTex;
+        sf::Sprite logo;
 
         //Music
         sf::Music BGMusic;
@@ -1108,7 +1112,7 @@ struct Menu
             //Create Buttons : Divided spaces in screen into 8 Xs and 7 Ys to put buttons in order
             for (char i = 0; i < noOfBtns; i++)
             {
-                btn[i].create(sf::Vector2f(screenWidth / 8 * 4, screenHeight / 6.5f * (i + 2)), btnTitle[i]);
+                btn[i].create(sf::Vector2f(screenWidth / 2, screenHeight / 6.5f * (i + 2)), btnTitle[i]);
             }
 
             //Disable Continue Button
@@ -1117,6 +1121,13 @@ struct Menu
             //Load and Play Music
             BGMusic.openFromFile("Data/Sounds/MainMenu.wav");
             BGMusic.setLoop(true);
+
+            //Logo
+            logoTex.loadFromFile("Data/Images/logo.png");
+            logoTex.setSmooth(1);
+            logo.setTexture(logoTex);
+            logo.setScale(1.5f,1.7f);
+            logo.setPosition(182, 13);
         }
 
         //Logic
@@ -1162,6 +1173,8 @@ struct Menu
         //Rendering
         void render(sf::RenderWindow& window)
         {
+            window.draw(logo);
+
             for (int i = 0; i < noOfBtns; i++)
             {
                 btn[i].render(window);
@@ -1171,7 +1184,6 @@ struct Menu
             {
                 ball[i].render(window);
             }
-            
         }
     };
 
