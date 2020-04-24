@@ -667,7 +667,7 @@ struct Match
 {
     struct Mode
     {
-        //// VARIABLES ////
+        //// VARIABLES //// 
         
         Object::Player player1, player2; //Players
     
@@ -683,6 +683,53 @@ struct Match
         
         //Timer
         int timer;
+        const int timerFull= 60*60;
+        
+        //// FUNCTIONS ////
+        void create(Match* parent)
+        {
+            player1.create((parent->levels.player[parent->levels.crntLvl]), {120, 550}, 1);
+            player2.create((parent->levels.enemy[parent->levels.crntLvl]), {880, 550}, 0);
+            ball.create();
+            timer = timerFull;
+        }
+        
+        void collisions(Match* parent)
+        {
+            if ( (player1.ballCollision(ball.sprite, ball.velocity) || player2.ballCollision(ball.sprite, ball.velocity)) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
+                parent->kickBallSound.play();
+
+            ball.goalCollision(parent->goal1);
+            ball.goalCollision(parent->goal2);
+        }
+
+        void countScore(Match* parent)
+        {
+            if (!(ball.sprite.getGlobalBounds().intersects(parent->innerGoal1) ||
+            ball.sprite.getGlobalBounds().intersects(parent->innerGoal2)))
+                outside_goal = 1;
+            if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(parent->innerGoal1) )
+            {
+                Score2++;
+                goalScored(parent);
+            }
+            else if (!inside_goal && outside_goal && ball.sprite.getGlobalBounds().intersects(parent->innerGoal2))
+            {
+                Score1++;
+                goalScored(parent);
+            }
+            else
+                inside_goal = 0;
+        }
+        
+        void goalScored(Match* parent)
+        {
+            inside_goal = 1;
+            outside_goal = 0;
+            if(global.soundEnabled)
+                parent->GoalScoredSnd.play();
+            restart();
+        }
 
         void restart()
         {
@@ -695,7 +742,20 @@ struct Match
             
             player2.sprite.setPosition(880.0f, 550.0f);
             player2.velocity = {};
+        }
+        
+        void newLvl(Match* parent)
+        {
+            player1.create((parent->levels.player[parent->levels.crntLvl]), {120, 550}, 1);
+            player2.create((parent->levels.enemy[parent->levels.crntLvl]), {880, 550} , 0);
             
+            if(global.soundEnabled)
+            parent->GameStartSound.play();
+            
+            restart();
+
+            Score1 = Score2 = isGameEndSound = parent->startedClock = EndGame = 0;
+            timer = timerFull;
         }
     };
     
@@ -714,10 +774,19 @@ struct Match
     sf::FloatRect innerGoal1,innerGoal2; //Inner of Goal
 
     // Sounds
-    sf::SoundBuffer kickBallSoundbuff;
+    sf::SoundBuffer GameStartBuff;
+    sf::Sound GameStartSound;
+ 
+    sf::SoundBuffer kickBallBuff;
     sf::Sound kickBallSound;
+
+    sf::SoundBuffer GoalScoredBuff;
+    sf::Sound GoalScoredSnd;
+
+    sf::SoundBuffer cntDwnBuff;
+    sf::Sound cntDwnSound;
     
-    sf::SoundBuffer GameEndSoundBuff;
+    sf::SoundBuffer GameEndBuff;
     sf::Sound GameEndSound;
     
     // Buttons
@@ -742,16 +811,9 @@ struct Match
 
     void create()
     {
-        // Players
-        single.player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
-        single.player2.create((levels.enemy[levels.crntLvl]), {880, 550}, 0);
-        
-        multi.player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
-        multi.player2.create((levels.enemy[levels.crntLvl]), {880, 550}, 0);
-        
-        //Ball
-        single.ball.create();
-        multi.ball.create();
+        //Modes
+        single.create(this);
+        multi.create(this);
 
         //Goals
         gl.loadFromFile("Data/Images/Goal.png");
@@ -767,10 +829,20 @@ struct Match
         innerGoal2 = sf::FloatRect(goal2.getGlobalBounds().left, goal2.getGlobalBounds().top + 20, goal2.getGlobalBounds().width, goal2.getGlobalBounds().height - 20);
      
         //Sounds
-        kickBallSoundbuff.loadFromFile("Data/Sounds/Kick.wav");
-        kickBallSound.setBuffer(kickBallSoundbuff);
-        GameEndSoundBuff.loadFromFile("Data/Sounds/gEnd.wav");
-        GameEndSound.setBuffer(GameEndSoundBuff);
+        GameStartBuff.loadFromFile("Data/Sounds/gStart.wav");
+        GameStartSound.setBuffer(GameStartBuff);
+
+        kickBallBuff.loadFromFile("Data/Sounds/Kick.wav");
+        kickBallSound.setBuffer(kickBallBuff);
+
+        GoalScoredBuff.loadFromFile("Data/Sounds/goalScored.wav");
+        GoalScoredSnd.setBuffer(GoalScoredBuff);
+
+        cntDwnBuff.loadFromFile("Data/Sounds/cntDwn.wav");
+        cntDwnSound.setBuffer(cntDwnBuff);
+
+        GameEndBuff.loadFromFile("Data/Sounds/gEnd.wav");
+        GameEndSound.setBuffer(GameEndBuff);
         GameEndSound.setVolume(20.0f);
 
         //Pause Button
@@ -790,8 +862,6 @@ struct Match
         timer_cnt.setFont(global.BtnFont);
         timer_cnt.setCharacterSize(40);
         timer_cnt.setPosition(screenWidth / 15, 30);
-        single.timer = resetTimer();
-        multi.timer = resetTimer();
         
         //Match Result
         winOrlose.setFont(global.BtnFont);
@@ -807,12 +877,7 @@ struct Match
     ///SinglePlayer
     void SingleLogic(char& screen)
     {
-        // Collisions
-        if (single.player1.ballCollision(single.ball.sprite, single.ball.velocity) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
-            kickBallSound.play();
-
-        single.ball.goalCollision(goal1);
-        single.ball.goalCollision(goal2);
+        single.collisions(this);
 
         // Movement Control
         single.player1.move();
@@ -824,25 +889,7 @@ struct Match
     void scoringSingle(char& screen)
     {
         // Scoring
-        if (!(single.ball.sprite.getGlobalBounds().intersects(innerGoal1) ||
-            single.ball.sprite.getGlobalBounds().intersects(innerGoal2)))
-            single.outside_goal = 1;
-        if (!single.inside_goal && single.outside_goal && single.ball.sprite.getGlobalBounds().intersects(innerGoal1) )
-        {
-            single.Score2++;
-            single.inside_goal = 1;
-            single.outside_goal = 0;
-            single.restart();
-        }
-        else if (!single.inside_goal && single.outside_goal && single.ball.sprite.getGlobalBounds().intersects(innerGoal2))
-        {
-            single.Score1++;
-            single.inside_goal = 1;
-            single.outside_goal = 0;
-            single.restart();
-        }
-        else
-            single.inside_goal = 0;
+        single.countScore(this);
 
         // End of Game
         if (single.timer <= 0)
@@ -861,7 +908,7 @@ struct Match
                     {
                         levels.nextlevel(screen, single.EndGame);  //Goto Next Level
                     } 
-                    newLvlSingle();
+                    single.newLvl(this);
                 }
                 else
                 {
@@ -878,7 +925,13 @@ struct Match
             }
 
         }
-        else single.timer--;
+        else
+        {
+            if(single.timer == 60 * 5 && global.soundEnabled)
+                cntDwnSound.play();
+
+            single.timer--;
+        }
 
         score1.setString(std::to_string(single.Score1));
         score2.setString(std::to_string(single.Score2));
@@ -886,33 +939,17 @@ struct Match
 
     }
 
-    void newLvlSingle()
-    {
-        single.player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
-        single.player2.create((levels.enemy[levels.crntLvl]), {880, 550} , 0);
-        
-        single.restart();
-
-        single.Score1 = single.Score2 = single.isGameEndSound = startedClock = single.EndGame = 0;
-        single.timer = resetTimer();
-    }
-
     void newGame()
     {
         levels.crntLvl=0;
-        newLvlSingle();
+        single.newLvl(this);
         levels.setText();
     }
 
     //MultiPlayer
     void MultiLogic(char& screen)
     {
-        // Collisions
-        if ((multi.player1.ballCollision(multi.ball.sprite, multi.ball.velocity) || multi.player2.ballCollision(multi.ball.sprite, multi.ball.velocity)) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
-            kickBallSound.play();
-
-        multi.ball.goalCollision(goal1);
-        multi.ball.goalCollision(goal2);
+        multi.collisions(this);
 
         // Movement Control
         multi.player1.move();
@@ -925,25 +962,7 @@ struct Match
     void scoringMulti(char& screen)
     {
         // Scoring
-        if (!(multi.ball.sprite.getGlobalBounds().intersects(innerGoal1) ||
-            multi.ball.sprite.getGlobalBounds().intersects(innerGoal2)))
-            multi.outside_goal = 1;
-        if (!multi.inside_goal && multi.outside_goal && multi.ball.sprite.getGlobalBounds().intersects(innerGoal1) )
-        {
-            multi.Score2++;
-            multi.inside_goal = 1;
-            multi.outside_goal = 0;
-            multi.restart();
-        }
-        else if (!multi.inside_goal && multi.outside_goal && multi.ball.sprite.getGlobalBounds().intersects(innerGoal2))
-        {
-            multi.Score1++;
-            multi.inside_goal = 1;
-            multi.outside_goal = 0;
-            multi.restart();
-        }
-        else
-            multi.inside_goal = 0;
+        multi.countScore(this);
 
         // End of Game
         if (multi.timer <= 0)
@@ -955,7 +974,7 @@ struct Match
                 if(showResults())
                 {
                     screen='h';
-                    newLvlMulti();
+                    multi.newLvl(this);
                 }
                 else
                 {
@@ -971,22 +990,17 @@ struct Match
             }
 
         }
-        else multi.timer--;
+        else
+        {
+            if(multi.timer == 60 * 5 && global.soundEnabled)
+                cntDwnSound.play();
+
+            multi.timer--;
+        }
 
         score1.setString(std::to_string(multi.Score1));
         score2.setString(std::to_string(multi.Score2));
         timer_cnt.setString(std::to_string(multi.timer / 60) + ":0" + std::to_string(multi.timer >= 0 ? (multi.timer / 6) % 10 : 9 - (-multi.timer / 6) % 10));
-    }
-
-    void newLvlMulti()
-    {
-        multi.player1.create((levels.player[levels.crntLvl]), {120, 550}, 1);
-        multi.player2.create((levels.enemy[levels.crntLvl]), {880, 550} , 0);
-        
-        multi.restart();
-
-        multi.Score1 = multi.Score2 = multi.isGameEndSound = startedClock = multi.EndGame = 0;
-        multi.timer = resetTimer();
     }
 
     //Common Logic
@@ -997,7 +1011,7 @@ struct Match
             startedClock=1;
             c1.restart();
         }
-        else if(c1.getElapsedTime() >= GameEndSoundBuff.getDuration())
+        else if(c1.getElapsedTime() >= GameEndBuff.getDuration())
         {
             return true;
         }
@@ -1009,11 +1023,6 @@ struct Match
     {
         if (pauseBtn.mouseLeftClicked())
             global.GamePaused = 1;
-    }
-    
-    int resetTimer()
-    {
-        return 60 * 60;
     }
     
     // Rendering
@@ -1369,9 +1378,9 @@ struct Menu
                     {
                     case 1: //Restart
                         if(session == 's')
-                            Game.newLvlSingle();
+                            Game.single.newLvl(&Game);
                         else if(session == 'm')
-                            Game.newLvlMulti();
+                            Game.single.newLvl(&Game);
                     case 0: //Cancel
                         global.GamePaused = 0;
                         break;
@@ -1492,7 +1501,6 @@ void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, bool& disabledContinu
 
     if(!file.good())
     {
-        std::cout << "Error Loading Data\n";
         file.close();
         return;
     }
@@ -1512,7 +1520,7 @@ void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, bool& disabledContinu
     //last Achieved Level
     file >> Game.levels.crntLvl;
     Game.levels.setText();
-    Game.newLvlSingle();
+    Game.single.create(&Game);
 
     sf::Vector2f temp; //Temporary Variables to store positions
     
