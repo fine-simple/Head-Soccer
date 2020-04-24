@@ -118,6 +118,12 @@ struct Object
         sf::Sprite sprite;
         sf::Vector2f velocity;
 
+        //Character Boundries
+        float currentTopPos;
+        float currentBottomPos;
+        float currentLeftPos;
+        float currentRightPos;
+
         //Shadow
         sf::RectangleShape shadow;
 
@@ -160,10 +166,10 @@ struct Object
 
         void move()
         {
-            float currentTopPos = sprite.getGlobalBounds().top;
-            float currentBottomPos = currentTopPos + sprite.getGlobalBounds().height;
-            float currentLeftPos = sprite.getGlobalBounds().left;
-            float currentRightPos = currentLeftPos + sprite.getGlobalBounds().width;
+            currentTopPos = sprite.getGlobalBounds().top;
+            currentBottomPos = currentTopPos + sprite.getGlobalBounds().height;
+            currentLeftPos = sprite.getGlobalBounds().left;
+            currentRightPos = currentLeftPos + sprite.getGlobalBounds().width;
 
             //Controls
             if (up)
@@ -173,7 +179,6 @@ struct Object
             }
             else gravity.activate(sprite, velocity);
 
-            // if(down && currentBottomPos < groundTop) velocity.y = 5.0f;
             if (right && currentRightPos < screenWidth) velocity.x = 2.5f;
             if (left && currentLeftPos > 0) velocity.x = -2.5f;
 
@@ -199,6 +204,42 @@ struct Object
             shadow.setPosition(sprite.getPosition().x, groundTop + shadowThickness / 2.0f); //sync with player position in x and be under it in y
 
         }
+
+        void moveAI(sf::Sprite& ball)
+        {
+            //Default Movement
+            move();
+
+            //Jump if ball in air and difference between altitude of player and ball bigger than 50 pixel
+            if (ball.getGlobalBounds().top + ball.getGlobalBounds().height < groundTop && abs(static_cast<int>(sprite.getPosition().y - ball.getPosition().y)) < 50)
+            {
+                upPressed();
+            }
+            else //Not in the air
+            {
+                upRealesed();
+                if(abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x)) < 5)
+                    downPressed();
+                else
+                    downRealesed();
+                
+            }
+           
+            //Move Towards it
+        
+            if(ball.getPosition().x > sprite.getPosition().x)
+            {
+                rightPressed();
+                leftRealesed();
+            }
+            else
+            {
+                rightRealesed();
+                leftPressed();
+            }
+            
+        }
+
         //Animtaion
 
         void animateKick()
@@ -881,6 +922,7 @@ struct Match
 
         // Movement Control
         single.player1.move();
+        single.player2.moveAI(single.ball.sprite);
         single.ball.move();
 
         scoringSingle(screen);
