@@ -37,6 +37,10 @@ struct Global
     //Fonts
     sf::Font BtnFont;
 
+    //Coins Made
+    int coins=0;
+    sf::Text coinsTxt;
+
     void create()
     {
         //Load Sounds
@@ -56,6 +60,10 @@ struct Global
 
         //Load Fonts
         BtnFont.loadFromFile("Data/Fonts/fontBtn.ttf");
+
+        //Show Coins
+        coinsTxt.setFont(BtnFont);
+        coinsTxt.setString(std::to_string(coins));
     }
 
     void Logic()
@@ -952,7 +960,7 @@ struct Match
                     else               //if Won
                     {
                         levels.nextlevel(screen, single.EndGame);  //Goto Next Level
-                    } 
+                    }
                     single.newLvl(*this);
                 }
                 else
@@ -1056,12 +1064,11 @@ struct Match
             startedClock=1;
             c1.restart();
         }
-        else if(c1.getElapsedTime() >= GameEndBuff.getDuration())
+        else if(c1.getElapsedTime().asSeconds() >= 5)
         {
             return true;
         }
         return false;
-        
     }
 
     void PauseLogic(char& session)
