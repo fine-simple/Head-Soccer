@@ -37,10 +37,6 @@ struct Global
     //Fonts
     sf::Font BtnFont;
 
-    //Coins Made
-    int coins=0;
-    sf::Text coinsTxt;
-
     void create()
     {
         //Load Sounds
@@ -60,10 +56,6 @@ struct Global
 
         //Load Fonts
         BtnFont.loadFromFile("Data/Fonts/fontBtn.ttf");
-
-        //Show Coins
-        coinsTxt.setFont(BtnFont);
-        coinsTxt.setString(std::to_string(coins));
     }
 
     void Logic()
@@ -91,22 +83,25 @@ struct Global
 /// Gravity Struct, responsible for applying gravity to different objects, giving it realistic feeling
 struct Gravity
 {
-    bool inAir = 0;
+    bool inAir = 0, solid=0;
     float dv = 1.5f, maxVY = 100.0f, lostE = 0.35f, groundFr = 0.25f;
 
     void activate(sf::Sprite& body, sf::Vector2f& bodyV)
     {
         inAir = body.getPosition().y + body.getGlobalBounds().height / 2 < groundTop; //If object is above Air
 
-        if (inAir) //return it back to ground
+        if(!solid)
         {
-            if (bodyV.y < maxVY) bodyV.y += dv;
-        }
-        else      //bounce back with losing energy
-        {
-            bodyV.y = -bodyV.y + bodyV.y * lostE;
-            bodyV.x -= bodyV.x * groundFr;
-            body.setPosition(body.getPosition().x, groundTop - body.getGlobalBounds().height / 2 + 5);
+            if (inAir) //return it back to ground
+            {
+                if (bodyV.y < maxVY) bodyV.y += dv;
+            }
+            else      //bounce back with losing energy
+            {
+                bodyV.y = -bodyV.y + bodyV.y * lostE;
+                bodyV.x -= bodyV.x * groundFr;
+                body.setPosition(body.getPosition().x, groundTop - body.getGlobalBounds().height / 2 + 5);
+            }
         }
     }
 };
@@ -218,23 +213,34 @@ struct Object
             //Default Movement
             move();
 
-            //Jump if ball in air and difference between altitude of player and ball bigger than 50 pixel
-            if (ball.getGlobalBounds().top + ball.getGlobalBounds().height < groundTop && abs(static_cast<int>(sprite.getPosition().y - ball.getPosition().y)) < 50)
-            {
+            //Jump if ball in air and difference between altitude of player and ball bigger than 100 pixel
+            if (abs(static_cast<int>(sprite.getPosition().y - ball.getPosition().y)) > 30)
                 upPressed();
-            }
             else //Not in the air
             {
                 upRealesed();
-                if(abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x)) < 5)
-                    downPressed();
+                
+                //Kick Ball when near it
+                if(LPlyr)
+                {
+                    //Kick only when the ball at right
+                    if(sprite.getPosition().x - ball.getPosition().x >= -60)
+                        downPressed();
+                    else
+                        downRealesed();
+                }
                 else
-                    downRealesed();
+                {
+                    //Kick only when the ball at left
+                    if(sprite.getPosition().x - ball.getPosition().x <= 60)
+                        downPressed();
+                    else
+                        downRealesed();  
+                }
                 
             }
            
             //Move Towards it
-        
             if(ball.getPosition().x > sprite.getPosition().x)
             {
                 rightPressed();
@@ -245,7 +251,6 @@ struct Object
                 rightRealesed();
                 leftPressed();
             }
-            
         }
 
         //Animtaion
@@ -286,10 +291,10 @@ struct Object
 
         //Collisions
 
-        bool ballCollision(sf::Sprite& body, sf::Vector2f& bodyV)
+        bool ballCollision(sf::Sprite& body, sf::Vector2f& bodyV, bool& solid)
         {
-            bool atRight = velocity.x >= 2.5f && body.getPosition().x > sprite.getPosition().x;
-            bool atLeft = velocity.x <= -2.5f && body.getPosition().x < sprite.getPosition().x;
+            bool atRight = body.getPosition().x > sprite.getPosition().x;
+            bool atLeft = body.getPosition().x < sprite.getPosition().x;
             bool atAbove = body.getPosition().y < sprite.getPosition().y;
             bool atBottom = body.getPosition().y > sprite.getPosition().y;
 
@@ -313,13 +318,18 @@ struct Object
                 {
                     if (velocity.y < 0)
                         bodyV.y = velocity.y * 3;
-                    else bodyV.y = -bodyV.y + bodyV.y * 0.7f;
-                }
+                    else if(!atBottom)
+                    {
+                        bodyV.y = -bodyV.y - 2.0f + bodyV.y * 0.7f;
+                        bodyV.x > 0 ? bodyV.x += 1.5f : bodyV.x -= 1.5f ;
+                    }
+                }               
                 else if (atBottom) //Ball is at bottom of the Player
                 {
                     if (velocity.y > 0)
                     {
                         bodyV.y = velocity.y * 3;
+                        
                         if (velocity.x == 0)
                             bodyV.x += 2.5;
                     }
@@ -339,9 +349,39 @@ struct Object
                 return true;
             }
 
+            solid=0;
+            gravity.solid=0;
             return false;
         }
+        
+        void playerColl(sf::Sprite& body)
+        {
+            bool atRight = body.getPosition().x > sprite.getPosition().x;
+            bool atLeft = body.getPosition().x < sprite.getPosition().x;
+            bool atBottom = body.getPosition().y > sprite.getPosition().y;
 
+            if(sprite.getGlobalBounds().intersects(body.getGlobalBounds()))
+            {
+                if(atBottom)
+                {
+                    gravity.solid=1;
+                    velocity.y=0;
+                }
+ 
+                if (atLeft)
+                {
+                    leftRealesed();
+                }
+                else if(atRight)
+                {
+                    rightRealesed();
+                }
+                velocity.x=0;
+            }
+            else gravity.solid=0;
+        }
+
+        
         //Pressed button
         void upPressed()
         {
@@ -468,9 +508,17 @@ struct Object
 
         void goalCollision(sf::Sprite& body)
         {
-            sf::FloatRect goalTop = { body.getGlobalBounds().left, body.getGlobalBounds().top, body.getGlobalBounds().width, 20 };
+            sf::FloatRect goalTop = { body.getGlobalBounds().left, body.getGlobalBounds().top, body.getGlobalBounds().width, 40 };
             if (goalTop.intersects(sprite.getGlobalBounds()))
+            {
                 velocity.y = -velocity.y + velocity.y * lostE;
+                gravity.solid=1;
+            }
+            else
+            {
+                gravity.solid=0;
+            }
+            
         }
 
         void render(sf::RenderWindow &window)
@@ -745,11 +793,14 @@ struct Match
         
         void collisions(Match& parent)
         {
-            if ( (player1.ballCollision(ball.sprite, ball.velocity) || player2.ballCollision(ball.sprite, ball.velocity)) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
+            if ( (player1.ballCollision(ball.sprite, ball.velocity, ball.gravity.solid) || player2.ballCollision(ball.sprite, ball.velocity, ball.gravity.solid)) && global.soundEnabled)// || player2.stopCollision(ball.sprite,ball.velocity))
                 parent.kickBallSound.play();
 
             ball.goalCollision(parent.goal1);
             ball.goalCollision(parent.goal2);
+            
+            player1.playerColl(player2.sprite);
+            player2.playerColl(player1.sprite);
         }
 
         void countScore(Match& parent)
@@ -868,13 +919,13 @@ struct Match
         goal1.setTexture(gl);
         goal1.setOrigin(sf::Vector2f(50, 90));
         goal1.setPosition(sf::Vector2f(20, 500));
-        innerGoal1 = sf::FloatRect(goal1.getGlobalBounds().left, goal1.getGlobalBounds().top + 20, goal1.getGlobalBounds().width, goal1.getGlobalBounds().height - 20);
+        innerGoal1 = sf::FloatRect(goal1.getGlobalBounds().left, goal1.getGlobalBounds().top + 40, goal1.getGlobalBounds().width - 40, goal1.getGlobalBounds().height - 40);
      
         goal2.setTexture(gl);
         goal2.setTextureRect(sf::IntRect(gl.getSize().x, 0, -1 * gl.getSize().x, gl.getSize().y));
         goal2.setOrigin(sf::Vector2f(50, 90));
         goal2.setPosition(sf::Vector2f(980, 500));
-        innerGoal2 = sf::FloatRect(goal2.getGlobalBounds().left, goal2.getGlobalBounds().top + 20, goal2.getGlobalBounds().width, goal2.getGlobalBounds().height - 20);
+        innerGoal2 = sf::FloatRect(goal2.getGlobalBounds().left, goal2.getGlobalBounds().top + 40, goal2.getGlobalBounds().width - 40, goal2.getGlobalBounds().height - 40);
      
         //Sounds
         GameStartBuff.loadFromFile("Data/Sounds/gStart.wav");
