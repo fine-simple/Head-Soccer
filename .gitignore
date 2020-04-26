@@ -96,7 +96,6 @@ StyleCopReport.xml
 *.pidb
 *.svclog
 *.scc
-*.vcxproj
 
 # Chutzpah Test files
 _Chutzpah*
@@ -358,6 +357,7 @@ MigrationBackup/
 .ionide/
 
 # Specific Files
+*.vcxproj
 Head Soccer/main
 Head Soccer/main.o
-Data/save
+Head Soccer/Data/save.txt

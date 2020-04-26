@@ -367,7 +367,7 @@ struct Object
                     gravity.solid=1;
                     velocity.y=0;
                 }
- 
+                
                 if (atLeft)
                 {
                     leftRealesed();
@@ -1549,7 +1549,7 @@ void saveData(bool ContinueBtn, Match& Game)
 {
     std::ofstream file;
 
-    file.open("Data/save", std::ios_base::trunc);
+    file.open("Data/save.txt", std::ios_base::trunc);
 
     if(!file.good())
     {
@@ -1600,7 +1600,7 @@ void loadData(sf::Sprite& muteBtn, sf::Texture& unmuteTex, bool& disabledContinu
 {
     std::ifstream file;
 
-    file.open("Data/save");
+    file.open("Data/save.txt");
 
     if(!file.good())
     {
