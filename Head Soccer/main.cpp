@@ -348,8 +348,7 @@ struct Object
 
                 return true;
             }
-
-            solid=0;
+            
             gravity.solid=0;
             return false;
         }
@@ -1078,7 +1077,9 @@ struct Match
                 if(showResults())
                 {
                     screen='h';
+                    global.soundEnabled=0;
                     multi.newLvl(*this);
+                    global.soundEnabled=1;
                 }
                 else
                 {
@@ -1725,7 +1726,7 @@ int main()
                 window.close();
                 break;
             case sf::Event::LostFocus:
-                if (screen == 's')
+                if (screen == 's' || screen == 'm')
                     global.GamePaused = 1;
                 break;
 
