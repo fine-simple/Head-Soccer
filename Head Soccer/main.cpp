@@ -300,11 +300,11 @@ struct Object
 
             if (sprite.getGlobalBounds().intersects(body.getGlobalBounds())) //Collision Detection
             {
-                if (atLeft) //Ball is at Left of the Player
+                if (atLeft && velocity.x < 0) //Ball is at Left of the Player
                 {
                     bodyV.x = velocity.x * 3;
                 }
-                else if (atRight) //Ball is at Right of the Player
+                else if (atRight && velocity.x > 0) //Ball is at Right of the Player
                 {
                     bodyV.x = velocity.x * 3;
                 }
@@ -1767,28 +1767,28 @@ int main()
                     switch (e.key.code)
                     {
                     case sf::Keyboard::Up:
-                        Game.multi.player1.upPressed();
-                        break;
-                    case sf::Keyboard::Down:
-                        Game.multi.player1.downPressed();
-                        break;
-                    case sf::Keyboard::Right:
-                        Game.multi.player1.rightPressed();
-                        break;
-                    case sf::Keyboard::Left:
-                        Game.multi.player1.leftPressed();
-                        break;
-                    case sf::Keyboard::W:
                         Game.multi.player2.upPressed();
                         break;
-                    case sf::Keyboard::S:
+                    case sf::Keyboard::Down:
                         Game.multi.player2.downPressed();
                         break;
-                    case sf::Keyboard::D:
+                    case sf::Keyboard::Right:
                         Game.multi.player2.rightPressed();
                         break;
-                    case sf::Keyboard::A:
+                    case sf::Keyboard::Left:
                         Game.multi.player2.leftPressed();
+                        break;
+                    case sf::Keyboard::W:
+                        Game.multi.player1.upPressed();
+                        break;
+                    case sf::Keyboard::S:
+                        Game.multi.player1.downPressed();
+                        break;
+                    case sf::Keyboard::D:
+                        Game.multi.player1.rightPressed();
+                        break;
+                    case sf::Keyboard::A:
+                        Game.multi.player1.leftPressed();
                         break;
                     }
                 }
@@ -1814,22 +1814,22 @@ int main()
                     switch (e.key.code)
                     {
                     case sf::Keyboard::Down:
-                        Game.multi.player1.downRealesed();
-                        break;
-                    case sf::Keyboard::Right:
-                        Game.multi.player1.rightRealesed();
-                        break;
-                    case sf::Keyboard::Left:
-                        Game.multi.player1.leftRealesed();
-                        break;
-                    case sf::Keyboard::S:
                         Game.multi.player2.downRealesed();
                         break;
-                    case sf::Keyboard::D:
+                    case sf::Keyboard::Right:
                         Game.multi.player2.rightRealesed();
                         break;
-                    case sf::Keyboard::A:
+                    case sf::Keyboard::Left:
                         Game.multi.player2.leftRealesed();
+                        break;
+                    case sf::Keyboard::S:
+                        Game.multi.player1.downRealesed();
+                        break;
+                    case sf::Keyboard::D:
+                        Game.multi.player1.rightRealesed();
+                        break;
+                    case sf::Keyboard::A:
+                        Game.multi.player1.leftRealesed();
                         break;
                     }
                 }
