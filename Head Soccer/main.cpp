@@ -231,14 +231,14 @@ struct Object
                         downRealesed();
 
                     //Ball underneath player
-                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 5))
+                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 20))
                     {
-                        leftPressed();
+                        rightPressed();
                         stuck=1;
                     }
                     else
                     {
-                        leftRealesed();
+                        rightRealesed();
                         stuck=0;
                     }
                     
@@ -252,10 +252,16 @@ struct Object
                         downRealesed();
 
                     //Ball underneath player
-                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 3))
-                        rightPressed();
+                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 20))
+                    {
+                        leftPressed();
+                        stuck=1;
+                    }
                     else
-                        rightRealesed();
+                    {
+                        leftRealesed();
+                        stuck=0;
+                    }
                 }
                 
             }
