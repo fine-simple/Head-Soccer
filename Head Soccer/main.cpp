@@ -210,7 +210,7 @@ struct Object
 
         void moveAI(sf::Sprite& ball)
         {
-            bool stuck=0;
+            bool stuck=abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x)) < 20; //&& abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) > -10));
             //Default Movement
             move();
 
@@ -231,15 +231,13 @@ struct Object
                         downRealesed();
 
                     //Ball underneath player
-                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 20))
+                    if(sprite.getPosition().y - ball.getPosition().y < 0 && stuck)
                     {
-                        rightPressed();
-                        stuck=1;
+                        leftPressed();
                     }
                     else
                     {
-                        rightRealesed();
-                        stuck=0;
+                        leftRealesed();
                     }
                     
                 }
@@ -252,15 +250,14 @@ struct Object
                         downRealesed();
 
                     //Ball underneath player
-                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 20))
+                    if(sprite.getPosition().y - ball.getPosition().y < 0 && stuck)
                     {
-                        leftPressed();
-                        stuck=1;
+                        rightPressed();
+                        
                     }
                     else
                     {
-                        leftRealesed();
-                        stuck=0;
+                        rightRealesed();                        
                     }
                 }
                 
