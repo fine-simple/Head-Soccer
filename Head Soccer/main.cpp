@@ -536,10 +536,14 @@ struct Object
 
         void goalCollision(sf::Sprite& body)
         {
-            sf::FloatRect goalTop = { body.getGlobalBounds().left, body.getGlobalBounds().top, body.getGlobalBounds().width, 40 };
+            sf::FloatRect goalTop = { body.getGlobalBounds().left, body.getGlobalBounds().top, body.getGlobalBounds().width, 5 };
             if (goalTop.intersects(sprite.getGlobalBounds()))
             {
-                velocity.y = -velocity.y + velocity.y * lostE;
+                velocity.y = -1.5;
+                if(sprite.getPosition().x > screenWidth /2.0f) //at the right goal
+                    velocity.x = -2;
+                else //at Left goal
+                    velocity.x = 2;
                 gravity.solid=1;
             }
             else
@@ -1513,7 +1517,7 @@ struct Menu
                         if(session == 's')
                             Game.single.newLvl(Game);
                         else if(session == 'm')
-                            Game.single.newLvl(Game);
+                            Game.multi.newLvl(Game);
                     case 0: //Cancel
                         global.GamePaused = 0;
                         break;
