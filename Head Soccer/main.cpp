@@ -210,6 +210,7 @@ struct Object
 
         void moveAI(sf::Sprite& ball)
         {
+            bool stuck=0;
             //Default Movement
             move();
 
@@ -220,7 +221,7 @@ struct Object
             {
                 upRealesed();
                 
-                //Kick Ball when near it
+                //Specific if left player or right
                 if(LPlyr)
                 {
                     //Kick only when the ball at right
@@ -228,6 +229,19 @@ struct Object
                         downPressed();
                     else
                         downRealesed();
+
+                    //Ball underneath player
+                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 5))
+                    {
+                        leftPressed();
+                        stuck=1;
+                    }
+                    else
+                    {
+                        leftRealesed();
+                        stuck=0;
+                    }
+                    
                 }
                 else
                 {
@@ -235,21 +249,30 @@ struct Object
                     if(sprite.getPosition().x - ball.getPosition().x <= 60)
                         downPressed();
                     else
-                        downRealesed();  
+                        downRealesed();
+
+                    //Ball underneath player
+                    if(sprite.getPosition().y - ball.getPosition().y < 0 && abs(static_cast<int>(sprite.getPosition().x - ball.getPosition().x) < 3))
+                        rightPressed();
+                    else
+                        rightRealesed();
                 }
                 
             }
            
             //Move Towards it
-            if(ball.getPosition().x > sprite.getPosition().x)
+            if(!stuck)
             {
-                rightPressed();
-                leftRealesed();
-            }
-            else
-            {
-                rightRealesed();
-                leftPressed();
+                if(ball.getPosition().x > sprite.getPosition().x)
+                {
+                    rightPressed();
+                    leftRealesed();
+                }
+                else
+                {
+                    rightRealesed();
+                    leftPressed();
+                }
             }
         }
 
