@@ -357,7 +357,6 @@ MigrationBackup/
 .ionide/
 
 # Specific Files
-*.vcxproj
 Head Soccer/main
 Head Soccer/main.o
 Head Soccer/Data/save.txt
