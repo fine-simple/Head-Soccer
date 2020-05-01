@@ -121,12 +121,6 @@ struct Object
         sf::Sprite sprite;
         sf::Vector2f velocity;
 
-        //Character Boundries
-        float currentTopPos;
-        float currentBottomPos;
-        float currentLeftPos;
-        float currentRightPos;
-
         //Shadow
         sf::RectangleShape shadow;
 
@@ -169,10 +163,10 @@ struct Object
 
         void move()
         {
-            currentTopPos = sprite.getGlobalBounds().top;
-            currentBottomPos = currentTopPos + sprite.getGlobalBounds().height;
-            currentLeftPos = sprite.getGlobalBounds().left;
-            currentRightPos = currentLeftPos + sprite.getGlobalBounds().width;
+            float currentTopPos = sprite.getGlobalBounds().top;
+            float currentBottomPos = currentTopPos + sprite.getGlobalBounds().height;
+            float currentLeftPos = sprite.getGlobalBounds().left;
+            float currentRightPos = currentLeftPos + sprite.getGlobalBounds().width;
 
             //Controls
             if (up)
@@ -499,7 +493,7 @@ struct Object
 
         void randV()
         {
-            srand(time(NULL));
+            srand(static_cast<unsigned int>(time(NULL)));
 
             velocity = { rand() % 11 - 5.0f, 0};
         }
@@ -808,8 +802,8 @@ struct Match
         bool EndGame=0;
         
         //Timer
-        int timer;
         const int timerFull= 60*60;
+        int timer = timerFull;
         
         //// FUNCTIONS ////
         void create(Match& parent)
@@ -817,7 +811,6 @@ struct Match
             player1.create((parent.levels.player[parent.levels.crntLvl]), {120, 550}, 1);
             player2.create((parent.levels.enemy[parent.levels.crntLvl]), {880, 550}, 0);
             ball.create();
-            timer = timerFull;
         }
         
         void collisions(Match& parent)
@@ -933,7 +926,7 @@ struct Match
     Levels levels;
 
     //Instructions Menu Cancel Button Action
-    char crntMode;  //h for home, s for single player, m for multiplayer
+    char crntMode = 'h';  //h for home, s for single player, m for multiplayer
 
     //// FUNCTIONS ////
 
